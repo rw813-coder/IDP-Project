@@ -1,0 +1,18 @@
+from machine import Pin,PWM
+
+class line_sensor:
+    def __init__(self,pin,black_is_true=True, name = "sensor"):
+        self.pin = Pin(pin,Pin.IN)
+        self.black_is_true = black_is_true
+        self.name = name
+
+    def read(self):
+        return self.pin.value()
+
+    def on_line(self):
+        value = self.pin.value()
+        return value == 1 if self.black_is_true else value == 0
+
+    def __repr__(self):
+        return f"{self.name}: {self.read()}"
+
