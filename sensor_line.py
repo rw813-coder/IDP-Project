@@ -1,4 +1,4 @@
-from machine import Pin
+from machine import Pin, PWM
 from movements import forwards, turn_90, veer, depot_sequence, corner_turn
 
 
@@ -11,10 +11,10 @@ def run():
     junction = True
     #### Depot_state = 0
 
-    sens1 = ##
-    sens2 = ## 
-    sens3 = ##
-    sens4 = ##
+    sens1 = Pin(10, Pin.OUT)
+    sens2 = Pin(9, Pin.OUT)
+    sens3 = Pin(8, Pin.OUT)
+    sens4 = Pin(11, Pin.OUT)
 
     line_sensor1 = Pin(sens1, Pin.IN)  ##Front right
     line_sensor2 = Pin(sens2, Pin.IN)  ##Front left
