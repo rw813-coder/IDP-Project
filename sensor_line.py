@@ -1,8 +1,8 @@
-from machine import Pin, PWM
+from machine import Pin
 from movements import forwards, turn_90, veer, depot_sequence, corner_turn
 
 
-def run(): 
+def drive(): 
     package = False
     location = 0 ### 0 is between the junction and the deposit, 1 is in between the two deposits,
     #### 2 is between the deposit and the depot - i.e. entering, in, and exiting the depot
@@ -11,10 +11,10 @@ def run():
     junction = True
     #### Depot_state = 0
 
-    sens1 = Pin(10, Pin.OUT)
-    sens2 = Pin(9, Pin.OUT)
-    sens3 = Pin(8, Pin.OUT)
-    sens4 = Pin(11, Pin.OUT)
+    sens1 = ##
+    sens2 = ## 
+    sens3 = ##
+    sens4 = ##
 
     line_sensor1 = Pin(sens1, Pin.IN)  ##Front right
     line_sensor2 = Pin(sens2, Pin.IN)  ##Front left
@@ -55,6 +55,10 @@ def run():
         corner_turn(bl = line_sensor3.value(), br = line_sensor4.value(), \
         fr = line_sensor1.value(), fl = line_sensor2.value())
         forwards()
+
+
+if __name__ == "__main__":
+    drive()
 
 ####################################################################################
 ##Turning at tri_points, this is defined by whether

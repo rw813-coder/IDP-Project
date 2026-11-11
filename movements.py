@@ -1,7 +1,8 @@
 from global_data import wheelbase, wheeltrack
 from motor import left_motor, right_motor
 
-def run():
+def movementsrun():
+
     def forwards():
         left_motor.normal_speed()
         right_motor.normal_speed()
@@ -34,20 +35,22 @@ def run():
             left_motor.veer_speed()
             right_motor.normal_speed()
 
+if __name__ == "__main__":
+    movementsrun()
 
 
-    ####################
-    def depot_sequence(rightturn, fr, fl): 
-        turn_90(rightturn = rightturn)
-        while fr = True and fl = True:
-            forwards()
-        else:
-            package = 1
-        ###reverse
-        turn_90(rightturn = not rightturn) 
-        ###drive forwards
-        return 1
 
-    def deposit_sequence(rightturn = True):
+####################
+def depot_sequence(rightturn, fr, fl): 
+    turn_90(rightturn = rightturn)
+    while fr = True and fl = True:
+        forwards()
+    else:
+        package = 1
+    ###reverse
+    turn_90(rightturn = not rightturn) 
+    ###drive forwards
+    return 1
 
-        return 1
+def deposit_sequence(rightturn = True):
+    return 1
