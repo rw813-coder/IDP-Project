@@ -1,11 +1,12 @@
-from motor import motorrun
-from movements import movementsrun
+#import os
+#print(os.listdir())      # what's really on the board
+#import motor
+#print(dir(motor))
+
 from sensor_line import drive
 
 print("Welcome to main.py!")
 
-motorrun()
-movementsrun()
 drive()
 
 
