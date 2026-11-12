@@ -1,10 +1,10 @@
 from machine import Pin
 from movements import forwards, stop, veer, normal_drive, depot_sequence, turn_90, corner_turn, yard_sequence
 
-sens1 = 10
-sens2 = 11 
-sens3 = 12
-sens4 = 13
+sens1 = 8
+sens2 = 9 
+sens3 = 10
+sens4 = 11
 
 frontr = Pin(sens1, Pin.IN)  ##Front right
 frontl = Pin(sens2, Pin.IN)  ##Front left
