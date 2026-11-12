@@ -1,6 +1,6 @@
 from global_data import wheelbase, wheeltrack
 from motor import left_motor, right_motor
-
+import time
 def forwards():
     left_motor.normal_speed()
     right_motor.normal_speed()
@@ -47,7 +47,12 @@ def corner_turn(bl, br, fr, fl):
         turn_90(rightturn = (br == 1), fr = fr, fl = fl)
 
 
-def depot_sequence(rightturn, fr, fl): 
+def depot_sequence(rightturn, fr, fl, bl, br): 
+    turn_90(rightturn=rightturn, fr =fr, fl=fl)
+    while (fr.value() == 1) or (fl.value() == 1):
+        normal_drive(fr = fr, fl = fl)
+    if fr.value() and fl.value() == 0:
+        time.sleep(3)
     return 1
 
 def yard_sequence(rightturn, fr, fl):
@@ -55,6 +60,7 @@ def yard_sequence(rightturn, fr, fl):
     while (fr.value() == 1) or (fl.value() == 1):
         normal_drive(fr = fr, fl = fl)
     else:
+        return 1
         ## Drop off package
         ## Reverse
         ## Turn back the way you came

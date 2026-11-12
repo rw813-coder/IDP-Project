@@ -37,7 +37,8 @@ def drive():
         elif three_point and package and location == 2:      ###Entering the first yard to drop off the package
             location -= 1
             yard_sequence(rightturn = (br == 1), fr = fr, fl = fl)
-
+            package = False
+            
         elif three_point and package and location == 1:      ###Skipping the first yard, having deposited into the second
             location -= 1
             normal_drive(fr = fr, fl = fl)

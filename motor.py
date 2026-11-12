@@ -28,5 +28,5 @@ class Motor:
         self.pwm.duty_u16(int(65535 * speed / 100))
 
 
-left_motor = Motor(dirPin=2, PWMPin=3)  # left motor
-right_motor = Motor(dirPin=0, PWMPin=1)  # right motor
+left_motor = Motor(dirPin=4, PWMPin=5)  # left motor
+right_motor = Motor(dirPin=6, PWMPin=7)  # right motor
