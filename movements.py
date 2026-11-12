@@ -1,4 +1,3 @@
-from global_data import wheelbase, wheeltrack
 from motor import left_motor, right_motor
 import time
 def forwards():
