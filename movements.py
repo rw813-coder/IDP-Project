@@ -140,12 +140,12 @@ def corner_turn(bl, br, fr, fl):
 
 def depot_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)  #Turn into depot
-    depot_drive(fr, fl)         #Drive until line ends
+    depot_drive(fr, fl, bl, br)         #Drive until line ends
     end = time.ticks_add(time.ticks_ms(), int(3000))    #Pick up package
     while time.ticks_diff(end, time.ticks_ms()) > 0:
-        light_flash()                                       #Turn around 180 degrees
-    depot_drive(fr, fl, bl, br, reversing = True)                          #Drive until the three-point junction
-    turn_90(rightturn, fr, fl)               #Turn the opposite way from the one you came
+        light_flash()                                       
+    depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+    turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
 
 def yard_sequence(rightturn, fr, fl, bl, br):
