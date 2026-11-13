@@ -1,21 +1,21 @@
 from machine import Pin
 from time import sleep
-
+buttonpin = 15
+ledpin = 16
+button = Pin(buttonpin,Pin.IN)
+led1 = Pin(ledpin,Pin.OUT)
 def run():
-    buttonpin = ##
-    ledpin = ##
-    button = Pin(buttonpin,Pin.IN)
-    led1 = Pin(ledpin,Pin.OUT)
-
+    bt = button.value()
+    
     power = False
-    if button.value() == 1:
+    if bt == 1:
         power = True
         print ("Power is on")
     while power == False:
         sleep(0.1)
     while power == True:
-        led1.value(1)
-        if button.value() == 0:
+        led1 = 1
+        if bt == 0:
             power = False
             print ("Power is off")
             led1.value(0)

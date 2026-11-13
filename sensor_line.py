@@ -1,6 +1,6 @@
 from machine import Pin
 from movements import forwards, stop, veer, normal_drive, depot_sequence, turn_90, corner_turn, yard_sequence
-
+import time
 sens1 = 8
 sens2 = 9 
 sens3 = 10
@@ -64,6 +64,9 @@ def drive():
     finally:
         stop()
     
-
+def readings():
+    while True:
+        print(frontr.value(), frontl.value(), backl.value(), backr.value())
+        time.sleep(0.2)
 if __name__ == "__main__":
     drive()
