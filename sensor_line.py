@@ -1,6 +1,8 @@
 from machine import Pin
-from movements import forwards, stop, veer, normal_drive, depot_sequence, turn_90, corner_turn, yard_sequence
+from movements import stop, normal_drive, corner_turn, depot_sequence, yard_sequence
 import time
+from led import light_flash
+
 sens1 = 8
 sens2 = 9 
 sens3 = 10
@@ -11,6 +13,10 @@ frontl = Pin(sens2, Pin.IN)  ##Front left
 backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
+def skip_three_point():
+    while backl.value() or backr.value():
+        normal_drive(frontr, frontl)
+        light_flash()
 
 def drive(): 
 
@@ -19,6 +25,8 @@ def drive():
 
     try:
         while True:
+            light_flash()
+
             fr = frontr.value()
             fl = frontl.value()
             bl = backl.value()
@@ -31,8 +39,8 @@ def drive():
             three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
 
             if three_point and not package and location in (0, 1):   ###Skipping the yard initially
+                skip_three_point()
                 location += 1
-                normal_drive(fr = frontr, fl = frontl)
             
             elif three_point and not package and location == 2:   ###Entering the depot for the first time
                 depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl)
@@ -44,8 +52,8 @@ def drive():
                 package = False
                 
             elif three_point and package and location == 1:      ###Skipping the first yard, having deposited into the second
+                skip_three_point()
                 location -= 1
-                normal_drive(fr = frontr, fl = frontl)
 
             ###Non-three point states
             ###
@@ -55,9 +63,6 @@ def drive():
                 corner_turn(bl, br, frontr, frontl)
             
             ## Driving forwards normally
-            elif (fr or fl) and not bl and not br:
-                normal_drive(fr = frontr, fl = frontl)
-
             else:
                 normal_drive(frontr, frontl)
 
@@ -65,8 +70,9 @@ def drive():
         stop()
     
 def readings():
-    while True:
-        print(frontr.value(), frontl.value(), backl.value(), backr.value())
-        time.sleep(0.2)
+        while True:
+            print(frontr.value(), frontl.value(), backl.value(), backr.value())
+            time.sleep(0.2)
+
 if __name__ == "__main__":
     drive()

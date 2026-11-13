@@ -1,21 +1,7 @@
 from motor import left_motor, right_motor, moving
-from initialization import led1
 import time
+from led import light_flash, led1
 
-last_toggle = 0
-led_on = 0
-
-def light_flash():
-    global last_toggle, led_on
-    if not moving():
-        led_on = 0
-        led1.value(0)
-        return
-    now = time.ticks_ms()
-    if time.ticks_diff(now, last_toggle) >= 200:
-        led_on = 1 - led_on
-        led1.value(led_on)
-        last_toggle = now
 
 def forwards():
     left_motor.normal_speed()
@@ -27,30 +13,32 @@ def stop():
     led1.value(0)
 
 def veer(veerright = True):
-    if veerright:
+    if veerright:                      ### It HAS veered right, so need to reduce left motor speed
         left_motor.normal_speed()
         right_motor.veer_speed()
-    else:
+    else:                              ### Vice versa
         left_motor.veer_speed()
         right_motor.normal_speed()
 
 def correction(fr, fl):
+    'driving forwards with veering for correction'
     if fr == 1 and fl == 1:
         forwards()
-    elif fr == 0 and fl == 1:           ### It HAS veered right, so need to reduce left motor speed
+    elif fr == 0 and fl == 1:           
         veer(veerright = False)         
-    elif fr == 1 and fl == 0:          ### Vice versa
+    elif fr == 1 and fl == 0:          
         veer()
     else: 
         stop()
 
 def normal_drive(fr, fl):
-    'driving forwards with veering for correction'
+    'using corrective driving (correction function) with constantly updating inputs'
     rv, lv = fr.value(), fl.value()
     correction(fr = rv, fl = lv)
 
 
 def depot_drive(fr, fl):
+    'Driving along the line for the depot/yard sequences'
     while True:
         rv, lv = fr.value(), fl.value()  
         if not rv and not lv:
@@ -93,7 +81,6 @@ def corner_turn(bl, br, fr, fl):
         forwards()
     else:
         turn_90(rightturn = (br == 1), fr = fr, fl = fl)
-
 
 def depot_sequence(rightturn, fr, fl):
     turn_90(rightturn, fr, fl)  #Turn into depot

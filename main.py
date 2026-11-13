@@ -3,8 +3,7 @@
 #import motor
 #print(dir(motor))
 
-from sensor_line import drive
-from sensor_line import readings
+from sensor_line import drive, readings
 
 print("Welcome to main.py!")
 

@@ -1,6 +1,5 @@
 from machine import Pin, PWM
 
-  
 class Motor:
     def __init__(self, dirPin, PWMPin):
         self.mDir = Pin(dirPin, Pin.OUT)  # set motor direction pin
