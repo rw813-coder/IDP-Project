@@ -3,11 +3,11 @@
 #import motor
 #print(dir(motor))
 
-from sensor_line import drive, readings
+from sensor_line import drive ###############, readings
 
 print("Welcome to main.py!")
 
-readings()
+###readings()
 drive()
 
 

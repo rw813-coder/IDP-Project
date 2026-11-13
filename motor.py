@@ -27,9 +27,14 @@ class Motor:
         self.pwm.duty_u16(int(65535 * speed / 100))
         self.speed = speed
 
-    def reverse(self, speed = 30):
+    def reverse(self, speed = 70):
         self.mDir.value(1)
         self.pwm.duty_u16(int(65535 * speed / 100))
+        self.speed = speed
+
+    def reverse_veer_speed(self, speed = 35):
+        self.mDir.value(1)                     # slower speed in the direction of the veer
+        self.pwm.duty_u16(int(65535 * speed / 100))  
         self.speed = speed
 
 

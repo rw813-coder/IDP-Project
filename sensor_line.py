@@ -22,11 +22,17 @@ def drive():
 
     package = False
     location = 0
+    last_location = 0
 
     try:
         while True:
+
             light_flash()
 
+            if location != last_location:
+                print("location: ", location)
+                last_location = location
+                            
             fr = frontr.value()
             fl = frontl.value()
             bl = backl.value()
@@ -38,20 +44,36 @@ def drive():
             ###
             three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
 
-            if three_point and not package and location in (0, 1):   ###Skipping the yard initially
+            if three_point and not package and location == 0:   ###Skipping the yard initially
+                skip_three_point()
+                location += 1
+
+            elif three_point and not package and location == 1:   ###Skipping the yard initially
+                skip_three_point()
+                location += 1
+
+            elif three_point and not package and location == 2:   ###Skipping the yard initially
                 skip_three_point()
                 location += 1
             
-            elif three_point and not package and location == 2:   ###Entering the depot for the first time
-                depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl)
+            elif three_point and not package and location == 3:   ###Entering the depot for the first time
+                depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
                 package = True
 
-            elif three_point and package and location == 2:      ###Entering the first yard to drop off the package
+            elif three_point and package and location == 3:      ###Entering the first yard to drop off the package
                 location -= 1
-                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl)
+                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
                 package = False
-                
-            elif three_point and package and location == 1:      ###Skipping the first yard, having deposited into the second
+
+            elif three_point and not package and location == 2:   ###Skipping the yard initially
+                skip_three_point()
+                location -= 1
+
+            elif three_point and not package and location == 1:   ###Skipping the yard initially
+                skip_three_point()
+                location -= 1
+    
+            elif three_point and package and location == 1:      ###Not used, package should become false
                 skip_three_point()
                 location -= 1
 
@@ -59,7 +81,7 @@ def drive():
             ###
 
             ## Turning right/left at the corner
-            elif not fr and not fl and location == 0:
+            elif not fr and not fl:
                 corner_turn(bl, br, frontr, frontl)
             
             ## Driving forwards normally
@@ -69,10 +91,10 @@ def drive():
     finally:
         stop()
     
-def readings():
-        while True:
-            print(frontr.value(), frontl.value(), backl.value(), backr.value())
-            time.sleep(0.2)
+# def readings():
+#         while True:
+#             print(frontr.value(), frontl.value(), backl.value(), backr.value())
+#             time.sleep(0.2)
 
 if __name__ == "__main__":
     drive()

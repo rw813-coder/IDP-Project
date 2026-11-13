@@ -6,7 +6,11 @@ from led import light_flash, led1
 def forwards():
     left_motor.normal_speed()
     right_motor.normal_speed()
-    
+
+def reverse():
+    left_motor.reverse()
+    right_motor.reverse()
+
 def stop():
     left_motor.off()
     right_motor.off()
@@ -20,6 +24,14 @@ def veer(veerright = True):
         left_motor.veer_speed()
         right_motor.normal_speed()
 
+def reverse_veer(veerright = True):
+    if veerright:
+        left_motor.reverse_veer_speed()
+        right_motor.reverse()
+    else:
+        left_motor.reverse()
+        right_motor.reverse_veer_speed()
+
 def correction(fr, fl):
     'driving forwards with veering for correction'
     if fr == 1 and fl == 1:
@@ -31,21 +43,68 @@ def correction(fr, fl):
     else: 
         stop()
 
+def reverse_correction(fr, fl):
+    if fr == 0 and fl == 1:           
+        reverse_veer(veerright = False)         
+    elif fr == 1 and fl == 0:          
+        reverse_veer()
+    else: 
+        reverse()
+
 def normal_drive(fr, fl):
     'using corrective driving (correction function) with constantly updating inputs'
     rv, lv = fr.value(), fl.value()
     correction(fr = rv, fl = lv)
 
+def reverse_drive(fr, fl):
+    rv, lv = fr.value(), fl.value()
+    reverse_correction(fr = rv, fl = lv)
 
-def depot_drive(fr, fl):
+def depot_drive(fr, fl, bl, br, reversing = False):
     'Driving along the line for the depot/yard sequences'
-    while True:
-        rv, lv = fr.value(), fl.value()  
-        if not rv and not lv:
-            break
-        correction(rv, lv)
-        light_flash()
+    if not reversing:
+        while True:
+            rv, lv = fr.value(), fl.value()  
+            if not rv and not lv:
+                break
+            correction(rv, lv)
+            light_flash()
+    else:
+        while True:
+            rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
+            if brv and blv:
+                break
+            reverse_correction(rv, lv)
+            light_flash()
     stop()
+
+def yard_drive(fr, fl, bl, br, reversing = False):
+    'Driving along the line for the depot/yard sequences'
+    if not reversing:
+        while True:
+            rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
+            if blv and brv:
+                break
+            correction(rv, lv)
+            light_flash()
+    else:
+        flag = 0
+        while True:
+            rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
+            reverse_correction(rv, lv)
+            light_flash()
+            if not brv and not blv and flag == 0:
+                flag += 1
+            elif (brv or blv) and flag == 1:
+                flag += 1
+            elif (brv or blv) and flag == 2:
+                flag += 1
+            elif not brv and not blv and flag == 3:
+                break
+            reverse_correction(rv, lv)
+            light_flash()
+    stop()
+
 
 def spin(clockwise, in_place):
     if clockwise:
@@ -72,9 +131,6 @@ def rotate(clockwise, sensor, in_place, timeout_ms):
 def turn_90(rightturn, fr, fl, timeout_ms = 5000):
     return rotate(rightturn, fl if rightturn else fr, False, timeout_ms)
 
-def turn_180(rightturn, fr, fl, timeout_ms = 7000):
-    return rotate(rightturn, fl if rightturn else fr, True, timeout_ms)
-
 def corner_turn(bl, br, fr, fl):
     light_flash()
     if bl == 0 and br == 0:
@@ -82,24 +138,22 @@ def corner_turn(bl, br, fr, fl):
     else:
         turn_90(rightturn = (br == 1), fr = fr, fl = fl)
 
-def depot_sequence(rightturn, fr, fl):
+def depot_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl)         #Drive until line ends
     end = time.ticks_add(time.ticks_ms(), int(3000))    #Pick up package
     while time.ticks_diff(end, time.ticks_ms()) > 0:
-        light_flash()                     
-    turn_180(rightturn, fr, fl)                  #Turn around 180 degrees
-    depot_drive(fr, fl)                          #Drive until the three-point junction
-    turn_90(not rightturn, fr, fl)               #Turn the opposite way from the one you came
+        light_flash()                                       #Turn around 180 degrees
+    depot_drive(fr, fl, bl, br, reversing = True)                          #Drive until the three-point junction
+    turn_90(rightturn, fr, fl)               #Turn the opposite way from the one you came
 
 
-def yard_sequence(rightturn, fr, fl):
+def yard_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)
-    depot_drive(fr, fl)
+    yard_drive(fr, fl, bl, br)
     end = time.ticks_add(time.ticks_ms(), int(3000))       #Deposit package
     while time.ticks_diff(end, time.ticks_ms()) > 0:
-        light_flash()                     
-    turn_180(rightturn, fr, fl)          
-    depot_drive(fr, fl)
+        light_flash()                             
+    yard_drive(fr, fl, bl, br, reversing = True)
     turn_90(not rightturn, fr, fl) 
 
