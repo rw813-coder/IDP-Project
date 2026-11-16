@@ -16,6 +16,13 @@ def stop():
     right_motor.off()
     led1.value(0)
 
+def forwards_time(timeout_ms):
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        forwards()
+    else:
+        stop()
+
 def veer(veerright = True):
     if veerright:                      ### It HAS veered right, so need to reduce left motor speed
         left_motor.normal_speed()
@@ -95,14 +102,10 @@ def yard_drive(fr, fl, bl, br, reversing = False):
             light_flash()
             if not brv and not blv and flag == 0:
                 flag += 1
-            elif (brv or blv) and flag == 1:
-                flag += 1
-            elif (brv or blv) and flag == 2:
-                flag += 1
-            elif not brv and not blv and flag == 3:
+            elif (brv and blv) and flag == 1:
                 break
-            reverse_correction(rv, lv)
-            light_flash()
+            else:
+                continue
     stop()
 
 
@@ -128,6 +131,13 @@ def rotate(clockwise, sensor, in_place, timeout_ms):
     stop()
     return True
 
+def rotate_time(clockwise, in_place, timeout_ms):
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        spin(clockwise, in_place)
+    else:
+        stop()
+
 def turn_90(rightturn, fr, fl, timeout_ms = 5000):
     return rotate(rightturn, fl if rightturn else fr, False, timeout_ms)
 
@@ -150,10 +160,16 @@ def depot_sequence(rightturn, fr, fl, bl, br):
 
 def yard_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)
+    forwards_time(400)
+    rotate_time(rightturn, True, 370)
     yard_drive(fr, fl, bl, br)
     end = time.ticks_add(time.ticks_ms(), int(3000))       #Deposit package
     while time.ticks_diff(end, time.ticks_ms()) > 0:
         light_flash()                             
     yard_drive(fr, fl, bl, br, reversing = True)
-    turn_90(not rightturn, fr, fl) 
+    if (rightturn and fl == 1) or (rightturn == False and fr == 1):
+        turn_90(not rightturn, fr, fl)
+    else:
+        rotate_time(not rightturn, True, 300)
+        turn_90(not rightturn, fr, fl)
 

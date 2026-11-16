@@ -12,27 +12,27 @@ class Motor:
         self.pwm.duty_u16(0)
         self.speed = 0
             
-    def normal_speed(self, speed = 70):
+    def normal_speed(self, speed = 100):
         self.mDir.value(0)                     # forward = 0 reverse = 1 motor
         self.pwm.duty_u16(int(65535 * speed / 100))  # speed range 0-100 motor
         self.speed = speed
 
-    def veer_speed(self, speed = 35):
+    def veer_speed(self, speed = 50):
         self.mDir.value(0)                     # slower speed in the direction of the veer
         self.pwm.duty_u16(int(65535 * speed / 100))  
         self.speed = speed
 
-    def turn_speed(self, speed = 70):            # slower turn speed, will change this value later
+    def turn_speed(self, speed = 100):            # slower turn speed, will change this value later
         self.mDir.value(0)
         self.pwm.duty_u16(int(65535 * speed / 100))
         self.speed = speed
 
-    def reverse(self, speed = 70):
+    def reverse(self, speed = 100):
         self.mDir.value(1)
         self.pwm.duty_u16(int(65535 * speed / 100))
         self.speed = speed
 
-    def reverse_veer_speed(self, speed = 35):
+    def reverse_veer_speed(self, speed = 50):
         self.mDir.value(1)                     # slower speed in the direction of the veer
         self.pwm.duty_u16(int(65535 * speed / 100))  
         self.speed = speed

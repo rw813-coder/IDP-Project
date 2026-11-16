@@ -44,15 +44,7 @@ def drive():
             ###
             three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
 
-            if three_point and not package and location == 0:   ###Skipping the yard initially
-                skip_three_point()
-                location += 1
-
-            elif three_point and not package and location == 1:   ###Skipping the yard initially
-                skip_three_point()
-                location += 1
-
-            elif three_point and not package and location == 2:   ###Skipping the yard initially
+            if three_point and not package and location in range(3):   ###Skipping the yard initially
                 skip_three_point()
                 location += 1
             
@@ -61,21 +53,16 @@ def drive():
                 package = True
 
             elif three_point and package and location == 3:      ###Entering the first yard to drop off the package
-                location -= 1
-                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+                location += 1
                 package = False
+                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
 
-            elif three_point and not package and location == 2:   ###Skipping the yard initially
+            elif three_point and not package and location in (4,5):   ###Skipping the yard initially
                 skip_three_point()
-                location -= 1
-
-            elif three_point and not package and location == 1:   ###Skipping the yard initially
-                skip_three_point()
-                location -= 1
-    
-            elif three_point and package and location == 1:      ###Not used, package should become false
-                skip_three_point()
-                location -= 1
+                location += 1
+                
+            elif three_point and not package and location == 6:    
+                stop()
 
             ###Non-three point states
             ###
