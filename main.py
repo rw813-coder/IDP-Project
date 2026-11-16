@@ -5,7 +5,6 @@
 
 from sensor_line import drive ###############, readings
 from ir_sensor import sensor_value
-from initialization import power
 
 print("Welcome to main.py!")
 RED_DETECTED = 1
