@@ -160,8 +160,8 @@ def depot_sequence(rightturn, fr, fl, bl, br):
 
 def yard_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)
-    forwards_time(400)
-    rotate_time(rightturn, True, 370)
+    forwards_time(200)
+    rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
     end = time.ticks_add(time.ticks_ms(), int(3000))       #Deposit package
     while time.ticks_diff(end, time.ticks_ms()) > 0:
@@ -170,6 +170,6 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     if (rightturn and fl == 1) or (rightturn == False and fr == 1):
         turn_90(not rightturn, fr, fl)
     else:
-        rotate_time(not rightturn, True, 300)
+        rotate_time(not rightturn, True, 150)
         turn_90(not rightturn, fr, fl)
 

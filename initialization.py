@@ -1,23 +1,19 @@
 from machine import Pin
-from time import sleep
+import time
 
+button = Pin(15, Pin.IN)
 
-buttonpin = 15
-ledpin = 16
-button = Pin(buttonpin,Pin.IN)
-led1 = Pin(ledpin,Pin.OUT)
+last_state = 0
+last_time = 0
 
-bt = button.value()
-
-power = False
-if bt == 1:
-    power = True
-    print ("Power is on")
-while power == False:
-    sleep(0.1)
-while power == True:
-    led1 = 1
-    if bt == 0:
-        power = False
-        print ("Power is off")
-        led1.value(0)
+def button_pressed():
+    'True once per press (rising edge, debounced)'
+    global last_state, last_time
+    state = button.value()
+    now = time.ticks_ms()
+    pressed = (state == 1 and last_state == 0
+               and time.ticks_diff(now, _last_time) > 250)
+    if pressed:
+        last_time = now
+    last_state = state
+    return pressed

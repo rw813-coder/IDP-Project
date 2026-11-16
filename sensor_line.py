@@ -2,6 +2,7 @@ from machine import Pin
 from movements import stop, normal_drive, corner_turn, depot_sequence, yard_sequence
 import time
 from led import light_flash
+from initialization import button_pressed
 
 sens1 = 8
 sens2 = 9 
@@ -28,6 +29,9 @@ def drive():
         while True:
 
             light_flash()
+            if button_pressed():
+                print("Power is off")
+                break
 
             if location != last_location:
                 print("location: ", location)
@@ -83,5 +87,13 @@ def drive():
 #             print(frontr.value(), frontl.value(), backl.value(), backr.value())
 #             time.sleep(0.2)
 
+def main():
+    while True:
+        print("Waiting for button")
+        while not button_pressed():
+            time.sleep_ms(20)
+        print("Power is on")
+        drive()               # returns when the button is pressed again
+
 if __name__ == "__main__":
-    drive()
+    main()
