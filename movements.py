@@ -109,21 +109,21 @@ def yard_drive(fr, fl, bl, br, reversing = False):
     stop()
 
 
-def spin(clockwise, in_place):
+def spin(clockwise, differential):
     if clockwise:
         left_motor.turn_speed()
-        if in_place: right_motor.reverse()
+        if differential: right_motor.reverse()
         else:        right_motor.off()
     else:
         right_motor.turn_speed()
-        if in_place: left_motor.reverse()
+        if differential: left_motor.reverse()
         else:        left_motor.off()
 
-def rotate(clockwise, sensor, in_place, timeout_ms):
+def rotate(clockwise, sensor, differential, timeout_ms):
     start = time.ticks_ms()
     for target in (0, 1):               # 1st: leave the line, 2nd: find the next
         while sensor.value() != target:
-            spin(clockwise, in_place)
+            spin(clockwise, differential)
             light_flash()
             if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
                 stop()
@@ -131,17 +131,20 @@ def rotate(clockwise, sensor, in_place, timeout_ms):
     stop()
     return True
 
-def rotate_time(clockwise, in_place, timeout_ms):
+def rotate_time(clockwise, differential, timeout_ms):
+    'Rotate for a fixed period of timeout ms'
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
-        spin(clockwise, in_place)
+        spin(clockwise, differential)
     else:
         stop()
 
 def turn_90(rightturn, fr, fl, timeout_ms = 5000):
+    '90 degree turn until front sensor not on the turning side goes to 1'
     return rotate(rightturn, fl if rightturn else fr, False, timeout_ms)
 
 def corner_turn(bl, br, fr, fl):
+    '90 degree turns for the left and right corners'
     light_flash()
     if bl == 0 and br == 0:
         forwards()
@@ -149,6 +152,7 @@ def corner_turn(bl, br, fr, fl):
         turn_90(rightturn = (br == 1), fr = fr, fl = fl)
 
 def depot_sequence(rightturn, fr, fl, bl, br):
+    'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)         #Drive until line ends
     end = time.ticks_add(time.ticks_ms(), int(3000))    #Pick up package
@@ -159,6 +163,7 @@ def depot_sequence(rightturn, fr, fl, bl, br):
 
 
 def yard_sequence(rightturn, fr, fl, bl, br):
+    'Turns into yard, deposits package, and turns back to return to the start point'
     turn_90(rightturn, fr, fl)
     forwards_time(200)
     rotate_time(rightturn, True, 185)
