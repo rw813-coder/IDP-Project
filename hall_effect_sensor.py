@@ -13,9 +13,9 @@ def read_adc_voltage(pin = 28):
 
 def determine_pole(pin = 28):
     'reads the pole of a magnet near the sensor. returns "north", "south", or "neither"'
-    north_threshold = 1.8 # lower bound for a magnetic north pole
+    north_threshold = 2.2 # lower bound for a magnetic north pole
 
-    south_threshold = 1.5 # upper bound for a magnetic south pole
+    south_threshold = 1.9 # upper bound for a magnetic south pole
 
     voltage = read_adc_voltage(pin) # reads voltage from the hall effect sensor
 
