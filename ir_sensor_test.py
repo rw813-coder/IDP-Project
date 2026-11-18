@@ -9,28 +9,21 @@ DRIVE_SPEED  = 45000                 # duty cycle, 0-65535
 
 
 
-def sensor_value_test(): # binary value if light is red, traffic_light_value = 1 and vice versa
+def sensor_value_test(): # if 1 then go
     value = ir_sensor.value()
 
-    traffic_light_value = 1
+    go = 0
     
     while True:
 
+        print(value)
 
-        if traffic_light_value == 1:
-            sleep_ms(10)
+        if value == 0:
+            go = 1
+            print(go)
+            break
 
-        elif traffic_light_value == 0:
-            sleep_ms(2000)
-
-        
-        traffic_light_value = 1
-
-        if value != 1:
-            trffic_light_value = 0
-
-
-        print(traffic_light_value)
-
+        sleep_ms(5)
 
 sensor_value_test()
+
