@@ -1,4 +1,5 @@
 from motor import left_motor, right_motor
+from hall_effect_sensor import determine_pole
 import time
 
 def forwards():

@@ -3,6 +3,9 @@ from movements import stop, normal_drive, corner_turn, depot_sequence, yard_sequ
 import time
 from initialization import button_pressed
 
+##north poles need to go to the left
+
+
 sens1 = 8
 sens2 = 9 
 sens3 = 10
