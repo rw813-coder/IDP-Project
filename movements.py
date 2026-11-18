@@ -168,3 +168,36 @@ def yard_sequence(rightturn, fr, fl, bl, br):
         rotate_time(not rightturn, True, 150)
         turn_90(not rightturn, fr, fl)
 
+def new_depot_sequence(rightturn, fr, fl, bl, br):
+    'Turns into depot, picks up package, and exits depot'
+    turn_90(rightturn, fr, fl)  #Turn into depot
+    depot_drive(fr, fl, bl, br)         #Drive until line ends
+    no_package = (determine_pole() == 'neither')
+    if no_package:                                                      
+        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+        turn_90(not rightturn, fr, fl)               #Turn the opposite way as in entry to the depot                                       # Go deliver the package
+    else:
+        time.sleep_ms(3000)                                #Pick up the package
+        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+        turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
+    return no_package
+
+def junction_function(fr, fl, bl, br, upwards = False):
+    flag = 0
+    while True:
+        rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
+        correction(rv, lv)
+        if upwards:
+            if flag == 0 and not brv and not blv:
+                flag = 1
+            elif flag == 1 and (brv or blv):
+                turn_90(brv == 1, fr, fl)
+                break            
+        else:
+            if not brv and not blv and flag == 0:
+                flag += 1
+            elif flag == 1 and brv and blv:
+                flag += 1
+            elif flag == 2 and not brv and not blv:
+                break
+    stop()

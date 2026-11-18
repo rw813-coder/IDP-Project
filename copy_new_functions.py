@@ -1,63 +1,74 @@
-def junction_function(fr, fl, br, bl, upwards = False):
+def junction_function(fr, fl, bl, br, upwards = False):
     flag = 0
     while True:
+        rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
+        correction(rv, lv)
         if upwards:
-            rv, lv, brv, blv = fr.value(), fl.value(), br.value(), bl.value()
-            correction(rv, lv)
-            if not brv and not blv:
-                flag += 1
+            if flag == 0 and not brv and not blv:
+                flag = 1
             elif flag == 1 and (brv or blv):
-                turn_90(rightturn = (brv == 1), fr, fl)            
+                turn_90(brv == 1, fr, fl)
+                break            
         else:
-            rv, lv, brv, blv = fr.value(), fl.value(), br.value(), bl.value()
-            correction(rv, lv)
             if not brv and not blv and flag == 0:
                 flag += 1
             elif flag == 1 and brv and blv:
                 flag += 1
             elif flag == 2 and not brv and not blv:
                 break
-            else:
-                continue
-
     stop()
 
-def upwards_entry(fr, fl, br, bl, target, rightdirection = True):
-    position = 0
-    rv, lv, brv, blv = fr.value(), fl.value(), br.value(), bl.value()
-    while True:
-        normal_drive(fr, fl)
-        if brv and blv and position < 0:
-            position += 1
-            continue
-        elif position == target:           ###has reached the target depot, now needs to execute depot sequence and go back to jnc
-            depot_sequence(rightdirection, fr, fl, br, bl)
-            normal_drive(fr, fl)           ###the start of the return
-            if brv and blv and position > 0:
-                position -= 1
-                continue
-            elif position == 0 and brv and blv: ###reaches junction
-                break
-            else:
-                continue
-        else:
-            continue
+def upwards_entry(fr, fl, bl, br, rightdirection = True):
+    pos = 0
+    package = False
+    on_four_point = False            # True while still sitting on a four point already counted
 
-def depot_sequence(rightturn, fr, fl, bl, br, depot):
+    while True:
+        blv, brv = bl.value(), br.value()
+        new_four_point = bool(blv and brv)  #Triggers every time both of the rear sensors are 1
+
+        if not new_four_point:
+            on_four_point = False    # left the junction, so the next one counts as new
+
+        if new_four_point and not on_four_point:
+            on_four_point = True     # latch: handle each junction once
+
+            if not package:
+                if pos < 6:
+                    package = not new_depot_sequence(rightdirection, fr, fl, bl, br)
+                    if not package:
+                        pos += 1
+            else:
+                pos -= 1           # returning: count one junction passed
+                if pos <= 0:
+                    break
+
+        normal_drive(fr, fl)       # reads the front sensors itself
+
+    stop()
+    return pos
+
+
+def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)         #Drive until line ends
-    if determine_pole() == 'neither':
+    no_package = (determine_pole() == 'neither')
+    if no_package:
+        stop()                                                        
+        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+        turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot                                       # Go deliver the package
+    else:
         stop()
+        time.sleep_ms(3000)                                #Pick up the package
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
         turn_90(not rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
-            depot[0] += 1                                         #continue and increment depot state
-    else:
-        stop()                              #Stop to pick up package
-        time.sleep_ms(3000)                                   
-        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
-            depot[1] = True                                     #Make sure to set depot state to True
+    return no_package
 
-DGR, DGL, DUR, DUL = [0, False], [0, False], [0, False], [0, False] 
-## Initial depot stattes, loop will continue for an individual depot until [6, -] or [-, True]
+package = not new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+if package:
+    package = True
+    depot[1] = True
+else:
+    location += 1
+    depot[0] += 1
