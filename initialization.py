@@ -1,7 +1,7 @@
 from machine import Pin
 import time
 
-button = Pin(22, Pin.IN)
+button = Pin(22, Pin.IN, Pin.PULL_DOWN)
 
 # last_state = 0
 # last_time = 0

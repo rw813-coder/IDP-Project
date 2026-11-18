@@ -1,19 +1,30 @@
-from machine import Pin
+from machine import Pin, Timer
 import time
 from motor import moving
 
-led1 = Pin(16, Pin.OUT)
-last_toggle = 0
-led_on = 0
+led1 = Pin(19, Pin.OUT) #yellow
+led2 = Pin(18, Pin.OUT) #hgreen
+led3 = Pin(17, Pin.OUT) #red
 
-def light_flash():
+last_toggle = 0
+led_on = 1
+
+def update_led(timer):
     global last_toggle, led_on
-    if not moving():
-        led_on = 0
-        led1.value(0)
-        return
-    now = time.ticks_ms()
-    if time.ticks_diff(now, last_toggle) >= 200:
-        led_on = 1 - led_on
-        led1.value(led_on)
-        last_toggle = now
+    if moving():
+        now = time.ticks_ms()
+        if time.ticks_diff(now, last_toggle) >= 200:
+            led_on = 1 - led_on
+            led1.value(led_on)
+            last_toggle = now
+    else:
+        led_on = 1
+        led1.value(1)
+
+_timer = Timer()
+_timer.init(period=50, mode=Timer.PERIODIC, callback = update_led)
+
+def light_turn_off():
+    led1.value(0)
+    led2.value(0)
+    led3.value(0)

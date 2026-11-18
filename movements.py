@@ -1,7 +1,5 @@
-from motor import left_motor, right_motor, moving
+from motor import left_motor, right_motor
 import time
-from led import light_flash, led1
-
 
 def forwards():
     left_motor.normal_speed()
@@ -14,7 +12,6 @@ def reverse():
 def stop():
     left_motor.off()
     right_motor.off()
-    led1.value(0)
 
 def forwards_time(timeout_ms):
     start = time.ticks_ms()
@@ -75,14 +72,12 @@ def depot_drive(fr, fl, bl, br, reversing = False):
             if not rv and not lv:
                 break
             correction(rv, lv)
-            light_flash()
     else:
         while True:
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
             if brv and blv:
                 break
             reverse_correction(rv, lv)
-            light_flash()
     stop()
 
 def yard_drive(fr, fl, bl, br, reversing = False):
@@ -93,13 +88,11 @@ def yard_drive(fr, fl, bl, br, reversing = False):
             if blv and brv:
                 break
             correction(rv, lv)
-            light_flash()
     else:
         flag = 0
         while True:
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
             reverse_correction(rv, lv)
-            light_flash()
             if not brv and not blv and flag == 0:
                 flag += 1
             elif (brv and blv) and flag == 1:
@@ -124,7 +117,6 @@ def rotate(clockwise, sensor, differential, timeout_ms):
     for target in (0, 1):               # 1st: leave the line, 2nd: find the next
         while sensor.value() != target:
             spin(clockwise, differential)
-            light_flash()
             if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
                 stop()
                 return False            # gave up
@@ -132,7 +124,7 @@ def rotate(clockwise, sensor, differential, timeout_ms):
     return True
 
 def rotate_time(clockwise, differential, timeout_ms):
-    'Rotate for a fixed period of timeout ms'
+    'Rotate for a fixed period of timeout ms, without a sensor-defined end state'
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
         spin(clockwise, differential)
@@ -144,8 +136,7 @@ def turn_90(rightturn, fr, fl, timeout_ms = 5000):
     return rotate(rightturn, fl if rightturn else fr, False, timeout_ms)
 
 def corner_turn(bl, br, fr, fl):
-    '90 degree turns for the left and right corners'
-    light_flash()
+    '90 degree turns for corners - start turn when side sensor detects 1'
     if bl == 0 and br == 0:
         forwards()
     else:
@@ -155,9 +146,8 @@ def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)         #Drive until line ends
-    end = time.ticks_add(time.ticks_ms(), int(3000))    #Pick up package
-    while time.ticks_diff(end, time.ticks_ms()) > 0:
-        light_flash()                                       
+    stop()                              #Stop to pick up package
+    time.sleep_ms(3000)                                   
     depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
     turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
@@ -168,11 +158,10 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     forwards_time(200)
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
-    end = time.ticks_add(time.ticks_ms(), int(3000))       #Deposit package
-    while time.ticks_diff(end, time.ticks_ms()) > 0:
-        light_flash()                             
+    stop()                              #Stop to deposit package
+    time.sleep_ms(3000)                               
     yard_drive(fr, fl, bl, br, reversing = True)
-    if (rightturn and fl == 1) or (rightturn == False and fr == 1):
+    if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
         turn_90(not rightturn, fr, fl)
     else:
         rotate_time(not rightturn, True, 150)
