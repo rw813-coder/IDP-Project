@@ -3,7 +3,7 @@ import time
 
 button = Pin(22, Pin.IN, Pin.PULL_DOWN)
 
-last_state = button.value()
+last_state = 1
 last_time = 0
 
 # def button_pressed():
