@@ -12,13 +12,17 @@ def box_release():
 
 def grab_sequence():
     box_grab()
-    height_servo.set_height(height=5)
+    height_servo.set_height(height=30)
     timeout_ms = 2000
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
         reverse()
     else:
         stop()
+
+def drop_sequence():
+    height_servo.set_height(height=10)
+    box_release()
     
     
     
