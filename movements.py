@@ -1,5 +1,5 @@
 from motor import left_motor, right_motor
-from hall_effect_sensor import determine_pole
+from hall_effect_sensor import determine_pole, package_present
 import time
 
 def forwards():
@@ -168,6 +168,23 @@ def yard_sequence(rightturn, fr, fl, bl, br):
         rotate_time(not rightturn, True, 150)
         turn_90(not rightturn, fr, fl)
 
+def new_depot_sequence(rightturn, fr, fl, bl, br):
+    'Turns into depot, picks up package, and exits depot'
+    turn_90(rightturn, fr, fl)  #Turn into depot
+    depot_drive(fr, fl, bl, br)         #Drive until line ends
+    stop()
+    package_found = package_present()
+    if package_found:
+        time.sleep_ms(3000)                                #Pick up the package
+        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+        turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
+                                      # Go deliver the package
+    else:                                                                                                                                    
+        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
+        turn_90(not rightturn, fr, fl)               #Turn the same way as in entry to the depot        
+    return package_found    
+
+
 def junction_function(fr, fl, bl, br, upwards = False):
     flag = 0
     while True:
@@ -226,20 +243,3 @@ def upper_depots(fr, fl, bl, br, rightdirection = True):
 
     stop()
     return pos
-
-
-def new_depot_sequence(rightturn, fr, fl, bl, br):
-    'Turns into depot, picks up package, and exits depot'
-    turn_90(rightturn, fr, fl)  #Turn into depot
-    depot_drive(fr, fl, bl, br)         #Drive until line ends
-    stop()
-    package_found = not (determine_pole() == "neither")
-    if package_found:
-        time.sleep_ms(3000)                                #Pick up the package
-        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
-                                      # Go deliver the package
-    else:                                                                                                                                    
-        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(not rightturn, fr, fl)               #Turn the same way as in entry to the depot        
-    return package_found                                                                                                                                   

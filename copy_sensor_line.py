@@ -22,7 +22,7 @@ right = True
 ###actual_increment = 0
 location = 1
 increment = False
-DGR, DGL, DUR, DUL = [0, False], [0, False], [0, False], [0, False]
+DGR, DGL, DUR, DUL = False, False, False, False
 ## Represents the bay number visited, and whether or not the package has been collected
 ## Bay numbers go from 0 to 5. These correspond to locations 3 to 8.
 
@@ -69,24 +69,24 @@ def drive():
             
             elif three_point and not package and location in range(3, 9):   ###Entering the depot for the first time
                 package_found = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+                skip_three_point()
                 if package_found:
                     package = True
                     location -= 1
-                    ###depot[1] = True
                 else:
                     location += 1
-                    ###depot[0] += 1
 
             elif three_point and package and location in range(3, 9):
                 skip_three_point()
                 location -= 1
 
             elif three_point and package and location == 2:      ###Entering the first yard to drop off the package
-                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
                 package = False
                 location -= 1
                 increment = True
+                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
 
+            ##Non-three point states
             ## Turning right/left at the corner
             elif not fr and not fl:
                 corner_turn(bl, br, frontr, frontl)

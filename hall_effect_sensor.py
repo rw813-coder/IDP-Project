@@ -28,3 +28,10 @@ def determine_pole():
         return "south"
     else:
         return "neither"
+
+def package_present(samples=5, delay_ms=40):
+    'Sample the hall sensor over 200 ms, to check for magnetic field at a depot'
+    if determine_pole() != "neither":
+        return True
+    time.sleep_ms(delay_ms)
+    return False
