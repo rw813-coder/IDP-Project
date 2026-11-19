@@ -35,7 +35,7 @@ class servo:
         ##need duty cycle to height calculation
         return 1
 
-g_servo_pin = ##
-h_servo_pin = ##
+g_servo_pin = 13
+h_servo_pin = 15
 grab_servo = servo(g_servo_pin)
 height_servo = servo(h_servo_pin)

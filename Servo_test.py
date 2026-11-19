@@ -1,10 +1,10 @@
-from Servo import h_servo_pin, g_servo_pin
+from Servo import grab_servo, height_servo
 import time
 
 def grab_angle_test():
 
     for i in range(270):
-        g_servo_pin.set_angle(i)
+        grab_servo.set_angle(i)
         time.sleep(0.1)
         print(i)
 
