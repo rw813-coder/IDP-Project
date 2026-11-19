@@ -3,6 +3,7 @@ from movements import stop, normal_drive, corner_turn, depot_sequence, yard_sequ
 import time
 from initialization import button_pressed
 
+
 sens1 = 8
 sens2 = 9 
 sens3 = 10
@@ -15,7 +16,7 @@ backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
-location = 0
+location = 1
 
 def skip_three_point():
     while backl.value() or backr.value():

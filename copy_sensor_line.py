@@ -19,8 +19,8 @@ backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
 right = True
-actual_increment = 0
-location = 0
+###actual_increment = 0
+location = 1
 increment = False
 DGR, DGL, DUR, DUL = [0, False], [0, False], [0, False], [0, False]
 ## Represents the bay number visited, and whether or not the package has been collected
@@ -33,12 +33,9 @@ def skip_three_point():
 def drive(): 
     global package, location, increment, DGR, DGL, DUR, DUL
     depot_list = [DGR, DGL, DUR, DUL]
-
+ 
     try:
         while True:
-
-            n = 0
-            depot = depot_list[0]
 
             if button_pressed():
                 print("Power is off")
@@ -56,11 +53,11 @@ def drive():
             three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
 
             if three_point and not package and location == 0:
-                skip_three_point()
                 if increment:
                     stop()
                     break  #Junction mode would go here, and, because package = false, would skip the three points at locations 1 and 2
                 else:
+                    skip_three_point()
                     location += 1
 
             elif three_point and not package and location in range(1, 3):   ###Skipping the yard initially
@@ -71,22 +68,23 @@ def drive():
                     location += 1
             
             elif three_point and not package and location in range(3, 9):   ###Entering the depot for the first time
-                _package = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
-                if _package:
+                package_found = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+                if package_found:
                     package = True
-                    depot[1] = True
+                    location -= 1
+                    ###depot[1] = True
                 else:
                     location += 1
-                    depot[0] += 1
+                    ###depot[0] += 1
 
             elif three_point and package and location in range(3, 9):
                 skip_three_point()
                 location -= 1
 
             elif three_point and package and location == 2:      ###Entering the first yard to drop off the package
-                location -= 1
-                package = False
                 yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+                package = False
+                location -= 1
                 increment = True
 
             ## Turning right/left at the corner
