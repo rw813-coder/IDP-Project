@@ -62,8 +62,8 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)         #Drive until line ends
-    package = not (determine_pole() == 'neither')
-    if package:
+    package_found = not (determine_pole() == 'neither')
+    if package_found:
         stop()
         time.sleep_ms(3000)                                #Pick up the package
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
@@ -73,4 +73,4 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
         stop()                                                        
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
         turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot 
-    return package
+    return package_found

@@ -18,6 +18,8 @@ backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
+right = True
+actual_increment = 0
 location = 0
 increment = False
 DGR, DGL, DUR, DUL = [0, False], [0, False], [0, False], [0, False]
@@ -57,7 +59,7 @@ def drive():
                 skip_three_point()
                 if increment:
                     stop()
-                    break
+                    break  #Junction mode would go here, and, because package = false, would skip the three points at locations 1 and 2
                 else:
                     location += 1
 
@@ -69,8 +71,8 @@ def drive():
                     location += 1
             
             elif three_point and not package and location in range(3, 9):   ###Entering the depot for the first time
-                package = not new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
-                if package:
+                _package = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+                if _package:
                     package = True
                     depot[1] = True
                 else:
