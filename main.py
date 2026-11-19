@@ -5,7 +5,7 @@ try:
     main()
 finally:
     led._timer.deinit()
-    led.light_turn_off()
+    led.light_turn_off(True)
 
 # from machine import Pin
 # from utime import sleep

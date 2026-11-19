@@ -1,6 +1,7 @@
 from machine import Pin, Timer
 import time
 from motor import moving
+from hall_effect_sensor import determine_pole
 
 led1 = Pin(19, Pin.OUT) #yellow
 led2 = Pin(18, Pin.OUT) #hgreen
@@ -24,7 +25,20 @@ def update_led(timer):
 _timer = Timer()
 _timer.init(period=50, mode=Timer.PERIODIC, callback = update_led)
 
-def light_turn_off():
-    led1.value(0)
+def light_turn_off(yellow_light_off = False):
     led2.value(0)
     led3.value(0)
+    if yellow_light_off:
+        led1.value(0)
+    
+def magnetic_field_light():
+    if determine_pole == "north":
+        led2.value(0)
+        led3.value(1)
+    elif determine_pole == "south":
+        led2.value(1)
+        led3.value(0)
+    else:
+        light_turn_off()
+
+
