@@ -101,9 +101,8 @@ def reset_state():
     global location, package
     package = False
     location = 0
-    for d in (DGR, DGL, DUR, DUL):
-        d[0] = 0
-        d[1] = False
+    for d in (DGS, DGN, DUS, DUN):
+        d = False
 
 def main(reset = False):
     while True:
@@ -119,8 +118,3 @@ if __name__ == "__main__":
     main()
 
 
-
-
-####
-if package_no > 2:
-    ### drive to junction
