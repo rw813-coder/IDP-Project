@@ -19,10 +19,10 @@ backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
 right = True
-###actual_increment = 0
+package_no = 0
 location = 1
 increment = False
-DGR, DGL, DUR, DUL = False, False, False, False
+DGS, DGN, DUS, DUN = True, True, True, True
 ## Represents the bay number visited, and whether or not the package has been collected
 ## Bay numbers go from 0 to 5. These correspond to locations 3 to 8.
 
@@ -32,7 +32,6 @@ def skip_three_point():
 
 def drive(): 
     global package, location, increment, DGR, DGL, DUR, DUL
-    depot_list = [DGR, DGL, DUR, DUL]
  
     try:
         while True:
@@ -118,3 +117,10 @@ def main(reset = False):
 
 if __name__ == "__main__":
     main()
+
+
+
+
+####
+if package_no > 2:
+    ### drive to junction
