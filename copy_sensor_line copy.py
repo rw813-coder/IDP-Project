@@ -1,7 +1,8 @@
 from machine import Pin
-from movements import stop, normal_drive, corner_turn, depot_sequence, yard_sequence, new_depot_sequence
+from movements import stop, normal_drive, corner_turn, yard_sequence, new_yard_sequence, new_depot_sequence, junction_function, upper_depots
 import time
 from initialization import button_pressed
+from hall_effect_sensor import determine_pole
 
 ##north poles need to go to the left
 
@@ -18,24 +19,117 @@ backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
-right = True
+south = True    ### The initial direction, which is determined in the start up sequence, where south is the right hand side
 package_no = 0
 location = 1
+in_pos = True
 increment = False
-DGS, DGN, DUS, DUN = True, True, True, True
-## Represents the bay number visited, and whether or not the package has been collected
-## Bay numbers go from 0 to 5. These correspond to locations 3 to 8.
+YN, YS = 0, 0
+
 
 def skip_three_point():
     while backl.value() or backr.value():
         normal_drive(frontr, frontl)
 
+def depot_bay_checker():
+    'sequentially checks the bays for a package, and exits when a package has been found and the vehicle has exited the bays'
+    fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
+    three_point = three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
+    bay_no = 0
+    package_found = False
+    while not package_found:
+        if three_point:
+            package_found = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
+            bay_no += 1
+        else:
+            normal_drive(frontr, frontl)
+    else:
+        if three_point and bay_no == 0:
+            skip_three_point()
+            break
+        elif three_point and bay_no > 0:
+            skip_three_point()
+            bay_no -= 1
+        else:
+            normal_drive(frontr, frontl)
+
+def delivery(location, in_pos, package_no, pole, YN, YS):
+    'Delivers the first and second packages, requires package = True and package_no to be 0 or 1'
+    fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
+    correct_side = in_pos
+    three_point = three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
+    if correct_side:
+        target = YN + 1 if pole == "north" else YS + 1
+        if three_point and location == target:
+            if package_no == 0:
+                new_yard_sequence(br == 1, fr, fl, bl, br, in_pos)
+            else:
+                yard_sequence(br == 1, fr, fl, bl, br)
+            break
+            #Package no += 1, package = False, and redefines in_pos after exiting
+        else:
+            if three_point:
+                skip_three_point()
+                location += 1
+            elif not fr and not fl:
+                corner_turn(bl, br, frontr, frontl)
+                location = 1
+            else:
+                normal_drive(frontr, frontl)
+    else:
+        if three_point and location == 0:
+            junction_function(frontr, frontl, backl, backr)
+            correct_side = True
+        else:
+            if three_point:
+                skip_three_point()
+                location -= 1
+            elif not fr and not fl:
+                corner_turn(bl, br, frontr, frontl)
+                location = 1
+            else:
+                normal_drive(frontr, frontl)
+
+
+def search_for_package(frontr, frontl, backl, backr, location, in_pos):
+    'Searches for the first and second packages, requires package = False and package_no to be 0 or 1 to run'
+    fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
+    correct_side = in_pos
+    three_point = three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
+    if correct_side:
+        if three_point and location == 3:
+            depot_bay_checker(br == 1, frontr, frontl, backl, backr)
+            break
+            #package = True after exiting, location set to 3
+        else:
+            if three_point:
+                skip_three_point()
+                location += 1
+            elif not fr and not fl:
+                corner_turn(bl, br, frontr, frontl)
+            else:
+                normal_drive(frontr, frontl)
+    else:
+        if three_point and location == 0:
+            junction_function(frontr, frontl, backl, backr)
+            correct_side = True
+        else:
+            if three_point:
+                skip_three_point()
+                location += 1
+            elif not fr and not fl:
+                corner_turn(bl, br, frontr, frontl)
+            else:
+                normal_drive(frontr, frontl)
+
+
 def drive(): 
-    global package, location, increment, DGR, DGL, DUR, DUL
+    global package, package_no, right, location, increment, start, in_pos, YN, YS
  
     try:
         while True:
 
+            start = True
             if button_pressed():
                 print("Power is off")
                 break
@@ -51,58 +145,41 @@ def drive():
             ###
             three_point = (fr and fl and bl and not br) or (fr and fl and br and not bl)
 
-            if three_point and not package and location == 0:
-                if increment:
-                    stop()
-                    break  #Junction mode would go here, and, because package = false, would skip the three points at locations 1 and 2
+            if start == True:
+                if not fr and not fl:
+                    turned_right = corner_turn(bl, br, frontr, frontl) # If it has turned right, it is initally heading north
+                    if turned_right is not None:       # a turn actually happened
+                        south = not turned_right           
+                        start = False
                 else:
-                    skip_three_point()
-                    location += 1
+                    normal_drive(frontr, frontl)
 
-            elif three_point and not package and location in range(1, 3):   ###Skipping the yard initially
-                skip_three_point()
-                if increment:
-                    location -= 1
-                else:
-                    location += 1
-            
-            elif three_point and not package and location in range(3, 9):   ###Entering the depot for the first time
-                package_found = new_depot_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
-                skip_three_point()
-                if package_found:
-                    package = True
-                    location -= 1
-                else:
-                    location += 1
-
-            elif three_point and package and location in range(3, 9):
-                skip_three_point()
-                location -= 1
-
-            elif three_point and package and location == 2:      ###Entering the first yard to drop off the package
-                package = False
-                location -= 1
-                increment = True
-                yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
-
-            ##Non-three point states
-            ## Turning right/left at the corner
-            elif not fr and not fl:
-                corner_turn(bl, br, frontr, frontl)
-            
-            ## Driving forwards normally
             else:
-                normal_drive(frontr, frontl)
+                while package_no < 2:       ### The first two packaged delivered, ends 
+                    if package:
+                        pole = determine_pole()
+                        delivery(frontr, frontl, backl, backr, location, in_pos, pole, YN, YS)
+                        in_pos = south and pole == "north" or not south and pole == "south"
+                        package_no += 1
+                        package = False
+                    else:
+                        search_for_package(frontr, frontl, backl, backr, location, in_pos)
+                        package = True
+
+                else:
+                    
 
     finally:
         stop()
     
 def reset_state():
-    global location, package
+    global location, package, package_no, in_pos, start, YN, YS
     package = False
     location = 0
-    for d in (DGS, DGN, DUS, DUN):
-        d = False
+    package_no = 0
+    in_pos = True
+    start = True
+    YN, YS = 0, 0
 
 def main(reset = False):
     while True:

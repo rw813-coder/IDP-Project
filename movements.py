@@ -141,7 +141,9 @@ def corner_turn(bl, br, fr, fl):
     if bl == 0 and br == 0:
         forwards()
     else:
-        turn_90(rightturn = (br == 1), fr = fr, fl = fl)
+        rightturn = br == 1
+        turn_90(rightturn, fr = fr, fl = fl)
+        return rightturn
 
 def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
@@ -184,6 +186,21 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
         turn_90(not rightturn, fr, fl)               #Turn the same way as in entry to the depot        
     return package_found    
 
+def new_yard_sequence(rightturn, fr, fl, bl, br, in_pos):
+    'Turns into yard, deposits package, and turns back to return to the start point'
+    turn_90(rightturn, fr, fl)
+    forwards_time(200)
+    rotate_time(rightturn, True, 185)
+    yard_drive(fr, fl, bl, br)
+    stop()                              #Stop to deposit package
+    time.sleep_ms(3000)                               
+    yard_drive(fr, fl, bl, br, reversing = True)
+    if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
+        turn_90(rightturn if in_pos else not rightturn, fr, fl)  #Will go towards the nearest depot if in_pos
+    else:
+        rotate_time(not rightturn, True, 150)
+        turn_90(rightturn if in_pos else not rightturn, fr, fl) #Will go towards the nearest depot if in_pos
+                                                                #Else will head towards junction
 
 def junction_function(fr, fl, bl, br, upwards = False):
     flag = 0
