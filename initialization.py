@@ -1,22 +1,11 @@
 from machine import Pin
 import time
+from motor import left_motor, right_motor
 
 button = Pin(22, Pin.IN, Pin.PULL_DOWN)
 
 last_state = button.value()
 last_time = 0
-
-# def button_pressed():
-#     'True once per press (falling edge, debounced)'
-#     global last_state, last_time
-#     state = button.value()
-#     now = time.ticks_ms()
-#     pressed = (state == 0 and last_state == 1
-#                and time.ticks_diff(now, last_time) > 250)
-#     if pressed:
-#         last_time = now
-#     last_state = state
-#     return pressed
 
 def button_pressed():
     'True once per press (rising edge, debounced)'
@@ -30,18 +19,23 @@ def button_pressed():
     last_state = state
     return pressed
 
+def stop():
+    left_motor.off()
+    right_motor.off()
 
-# last_state = button.value()
-# last_time = 0
+class Stop(Exception):
+    pass
 
-# def button_pressed():
-#      'True once per press (falling edge, debounced)'
-#      global last_state, last_time
-#      state = button.value()
-#      now = time.ticks_ms()
-#      pressed = (state == 0 and last_state == 1
-#                and time.ticks_diff(now, last_time) > 250)
-#      if pressed:
-#          last_time = now
-#      last_state = state
-#      return pressed
+def check_stop():
+    if button_pressed():
+        stop()
+        print("Paused")
+        while not button_pressed():
+            time.sleep_ms(20)
+        print("Resumed")
+
+def check_stop_reset():
+    if button_pressed():
+        raise Stop
+
+    ### Will use this to stop for the more complex functions
