@@ -28,11 +28,16 @@ class servo:
 
     def grab(self):
         ##need grab angle from test
-        self.set_angle(None)
+        self.set_angle(200)
 
     def set_height(self,height):
         ##height in mm
-        ##need duty cycle to height calculation
+        if height < 0:
+            height = 0
+        elif height > 30:
+            height = 30
+        duty = int(servo.MIN_DUTY + (height/ 30) * (servo.MAX_DUTY - servo.MIN_DUTY))
+        self.servo.duty_u16(duty)
         return 1
 
 g_servo_pin = 13

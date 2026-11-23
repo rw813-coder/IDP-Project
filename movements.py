@@ -2,7 +2,8 @@ from motor import left_motor, right_motor
 from hall_effect_sensor import determine_pole, package_present
 import time
 from initialization import check_stop
-from Servo import grab_servo
+from Servo import grab_servo, height_servo
+
 
 def forwards():
     left_motor.normal_speed()
@@ -136,6 +137,16 @@ def rotate(clockwise, sensor, differential, timeout_ms):
     stop()
     return True
 
+def grab_sequence(fr, fl, bl, br):
+    grab_servo.grab()
+    height_servo.set_height(height=30)
+    timeout_ms = 2000
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        depot_drive(fr, fl, bl, br, reversing = True)
+    else:
+        stop()
+
 def rotate_time(clockwise, differential, timeout_ms):
     'Rotate for a fixed period of timeout ms, without a sensor-defined end state'
     start = time.ticks_ms()
@@ -162,9 +173,9 @@ def depot_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)
     forwards_time(50)         #Drive until line ends
-    stop()                              #Stop to pick up package
-    ###grab_servo.close()
-    time.sleep_ms(2000)                                  
+    stop()   
+    time.sleep(1000)                           #Stop to pick up package
+    grab_sequence(fr,fl,bl,br)                            
     depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
     turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
@@ -193,7 +204,7 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
     stop()                              #Stop to deposit package
-    ###grab_servo.open()
+    grab_servo.open()
     time.sleep_ms(2000)                               
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
