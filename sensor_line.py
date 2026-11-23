@@ -60,9 +60,13 @@ def drive():
                 skip_three_point()
                 location += 1
                 
-            elif three_point and not package and location == 6:   
-                stop() 
-                break
+            # elif three_point and not package and location == 6:
+            #     flag = 0
+            #     if not br and not bl and flag == 0:
+            #         flag += 1
+            #     elif flag == 1 and (br or bl):
+            #         stop()
+            #         break
             ###Non-three point states
             ###
 

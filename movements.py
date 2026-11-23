@@ -2,6 +2,7 @@ from motor import left_motor, right_motor
 from hall_effect_sensor import determine_pole, package_present
 import time
 from initialization import check_stop
+from Servo import grab_servo
 
 def forwards():
     left_motor.normal_speed()
@@ -66,6 +67,17 @@ def reverse_drive(fr, fl):
     rv, lv = fr.value(), fl.value()
     reverse_correction(fr = rv, fl = lv)
 
+def leave_line(clockwise, fr, fl, timeout_ms = 3000):
+    'Spin in place until neither front sensor sees the line'
+    start = time.ticks_ms()
+    while fr.value() or fl.value():
+        spin(clockwise, True)
+        if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
+            stop()
+            return False
+    stop()
+    return True
+
 def depot_drive(fr, fl, bl, br, reversing = False):
     'Driving along the line for the depot/yard sequences'
     if not reversing:
@@ -103,7 +115,6 @@ def yard_drive(fr, fl, bl, br, reversing = False):
                 continue
     stop()
 
-
 def spin(clockwise, differential):
     if clockwise:
         left_motor.turn_speed()
@@ -133,9 +144,9 @@ def rotate_time(clockwise, differential, timeout_ms):
     else:
         stop()
 
-def turn_90(rightturn, fr, fl, timeout_ms = 5000):
+def turn_90(rightturn, fr, fl, timeout_ms = 5000, differential = False):
     '90 degree turn until front sensor not on the turning side goes to 1'
-    return rotate(rightturn, fl if rightturn else fr, False, timeout_ms)
+    return rotate(rightturn, fl if rightturn else fr, differential, timeout_ms)
 
 def corner_turn(bl, br, fr, fl):
     '90 degree turns for corners - start turn when side sensor detects 1'
@@ -149,12 +160,31 @@ def corner_turn(bl, br, fr, fl):
 def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
-    depot_drive(fr, fl, bl, br)         #Drive until line ends
+    depot_drive(fr, fl, bl, br)
+    forwards_time(50)         #Drive until line ends
     stop()                              #Stop to pick up package
-    time.sleep_ms(3000)                                   
+    ###grab_servo.close()
+    time.sleep_ms(2000)                                  
     depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
     turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
+
+# def yard_sequence(rightturn, fr, fl, bl, br):
+#     'Turns into yard, deposits package, and turns back to return to the start point'
+#     turn_90(rightturn, fr, fl)
+#     forwards_time(200)
+#     rotate_time(rightturn, True, 185)
+#     yard_drive(fr, fl, bl, br)
+#     stop()                              #Stop to deposit package
+#     grab_servo.open()
+#     time.sleep_ms(2000)                               
+#     yard_drive(fr, fl, bl, br, reversing = True)
+#     if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
+#         turn_90(not rightturn, fr, fl)        # Not rightturn means it is continuing in same direction as it came
+#                                               ### Can add diff and see
+#     else:
+#         rotate_time(not rightturn, True, 150)
+#         turn_90(not rightturn, fr, fl)       ### ditto
 
 def yard_sequence(rightturn, fr, fl, bl, br):
     'Turns into yard, deposits package, and turns back to return to the start point'
@@ -163,14 +193,13 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
     stop()                              #Stop to deposit package
-    time.sleep_ms(3000)                               
+    ###grab_servo.open()
+    time.sleep_ms(2000)                               
     yard_drive(fr, fl, bl, br, reversing = True)
-    if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
-        turn_90(not rightturn, fr, fl)        # Not rightturn means it is continuing in same direction as it came
-    else:
-        rotate_time(not rightturn, True, 150)
-        turn_90(not rightturn, fr, fl)
-
+    leave_line(not rightturn, fr, fl)                                   # get off the yard line first
+    ok = turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
+    print("final turn ok:", ok)
+ 
 def new_depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
