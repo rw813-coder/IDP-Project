@@ -16,14 +16,15 @@ backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
-location = 1
+location = 0
+last_location = 0
 
 def skip_three_point():
     while backl.value() or backr.value():
         normal_drive(frontr, frontl)
 
 def drive(): 
-    global package, location
+    global package, location, last_location
 
     try:
         while True:
@@ -31,6 +32,10 @@ def drive():
             if button_pressed():
                 print("Power is off")
                 break
+
+            if location != last_location:
+                print("location: ", location)
+                last_location = location
 
             #Used to check and define the states (True/False)       
             fr = frontr.value()
@@ -56,10 +61,14 @@ def drive():
                 package = False
                 yard_sequence(rightturn = (br == 1), fr = frontr, fl = frontl, bl = backl, br = backr)
 
-            elif three_point and not package and location in (4,5):   ###Skipping the yard initially
+            elif three_point and not package and location in range(4, 7):   ###Skipping the yard initially
                 skip_three_point()
                 location += 1
-                
+
+            elif three_point and not package and location == 7:   ###Skipping the yard initially
+                stop()
+                break
+
             # elif three_point and not package and location == 6:
             #     flag = 0
             #     if not br and not bl and flag == 0:
@@ -80,7 +89,9 @@ def drive():
 
     finally:
         stop()
-    
+
+
+
 def reset_state():
     global location, package
     package = False

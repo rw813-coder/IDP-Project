@@ -17,10 +17,10 @@ def stop():
     left_motor.off()
     right_motor.off()
 
-def forwards_time(timeout_ms):
+def forwards_time(timeout_ms, reversing = False):
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
-        forwards()
+        reverse() if reversing else forwards()
     else:
         stop()
 
@@ -139,7 +139,7 @@ def rotate(clockwise, sensor, differential, timeout_ms):
 
 def grab_sequence(fr, fl, bl, br):
     grab_servo.grab()
-    height_servo.set_height(height=30)
+    height_servo.set_angle(60)
     timeout_ms = 2000
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
@@ -171,11 +171,14 @@ def corner_turn(bl, br, fr, fl):
 def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
+    rotate_time(rightturn, True, 85)
     depot_drive(fr, fl, bl, br)
     forwards_time(50)         #Drive until line ends
-    stop()   
-    time.sleep(1000)                           #Stop to pick up package
-    grab_sequence(fr,fl,bl,br)                            
+    stop()
+    grab_servo.grab()
+    time.sleep_ms(2000)
+                                           #Stop to pick up package
+                               
     depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
     turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
@@ -203,7 +206,8 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     forwards_time(200)
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
-    stop()                              #Stop to deposit package
+    stop()
+    forwards_time(150, reversing = True)                              #Stop to deposit package
     grab_servo.open()
     time.sleep_ms(2000)                               
     yard_drive(fr, fl, bl, br, reversing = True)

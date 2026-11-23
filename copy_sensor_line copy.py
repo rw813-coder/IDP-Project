@@ -61,7 +61,8 @@ def delivery(location, in_pos, package_no, pole, YN, YS, correct_side = False):
                 elif not fr and not fl:
                         turned_right = corner_turn(bl, br, frontr, frontl)
                         if turned_right is not None:       # a turn actually happened    
-                            location = 1 if correct_side else 0
+                            location = 1 if correct_side else 0 #the else should not be called since in_pos being true means it delivers before
+                                                                # the 90 degree turn
                 else:
                     normal_drive(frontr, frontl)
         else:
@@ -119,13 +120,13 @@ def search_for_package(location, in_pos):
 def junction_function(upwards = False):
     flag = 0
     while True:
-        blv, brv = frontr.value(), frontl.value(), backl.value(), backr.value()
+        blv, brv = backl.value(), backr.value()
         normal_drive(frontr, frontl)                           
         if upwards:
             if flag == 0 and not brv and not blv:
                 flag = 1
             elif flag == 1 and (brv or blv):
-                time.sleep_ms(50)                         #Can edit this value based on testing
+                time.sleep_ms(25)                         #Can edit this value based on testing
                 blv, brv = backl.value(), backr.value()   #Re-read sensors after the sleep
                 if blv and brv:
                     turn_90(determine_pole() == "north", frontr, frontl)

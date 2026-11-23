@@ -1,10 +1,13 @@
 from Servo import grab_servo, height_servo
 import time
-def move_test_test():
-    grab_servo.set_angle(0)
+def closed_teeth():
+    grab_servo.set_angle(270)
+
+def open_teeth():
+    grab_servo.set_angle(180)
 
 def set_height():
-    height_servo.set_angle(0)
+    height_servo.set_angle(75)
 
 def grab_angle_test():
 
@@ -20,4 +23,5 @@ def height_angle_test():
         time.sleep(0.1)
         print(i)
 
-set_height()
+open_teeth()
+#closed_teeth()

@@ -21,14 +21,14 @@ class servo:
        self.servo.duty_u16(duty)
     
     def close(self):
-        self.set_angle(270)
+        self.set_angle(235)
 
     def open(self):
-        self.set_angle(0)
+        self.set_angle(180)
 
     def grab(self):
         ##need grab angle from test
-        self.set_angle(200)
+        self.set_angle(250)
 
     def set_height(self,height):
         ##height in mm
