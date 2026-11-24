@@ -26,16 +26,13 @@ def stop():
 class Stop(Exception):
     pass
 
-def check_stop():
-    if button_pressed():
-        stop()
-        print("Paused")
-        while not button_pressed():
-            time.sleep_ms(20)
-        print("Resumed")
-
 def check_stop_reset():
     if button_pressed():
         raise Stop
 
-    ### Will use this to stop for the more complex functions
+def wait_ms(ms):
+    'Interruptible replacement for time.sleep_ms'
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < ms:
+        check_stop()
+        time.sleep_ms(5)

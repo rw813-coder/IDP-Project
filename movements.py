@@ -1,7 +1,7 @@
 from motor import left_motor, right_motor
 from hall_effect_sensor import determine_pole, package_present
 import time
-from initialization import check_stop
+from initialization import check_stop_reset, wait_ms
 from Servo import grab_servo, height_servo
 
 
@@ -20,6 +20,7 @@ def stop():
 def forwards_time(timeout_ms, reversing = False):
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        check_stop_reset()
         reverse() if reversing else forwards()
     else:
         stop()
@@ -64,14 +65,11 @@ def normal_drive(fr, fl):
     rv, lv = fr.value(), fl.value()
     correction(fr = rv, fl = lv)
 
-def reverse_drive(fr, fl):
-    rv, lv = fr.value(), fl.value()
-    reverse_correction(fr = rv, fl = lv)
-
 def leave_line(clockwise, fr, fl, timeout_ms = 3000):
     'Spin in place until neither front sensor sees the line'
     start = time.ticks_ms()
     while fr.value() or fl.value():
+        check_stop_reset()
         spin(clockwise, True)
         if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
             stop()
@@ -83,12 +81,14 @@ def depot_drive(fr, fl, bl, br, reversing = False):
     'Driving along the line for the depot/yard sequences'
     if not reversing:
         while True:
+            check_stop_reset()
             rv, lv = fr.value(), fl.value()  
             if not rv and not lv:
                 break
             correction(rv, lv)
     else:
         while True:
+            check_stop_reset()
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
             if brv and blv:
                 break
@@ -99,6 +99,7 @@ def yard_drive(fr, fl, bl, br, reversing = False):
     'Driving along the line for the depot/yard sequences'
     if not reversing:
         while True:
+            check_stop_reset()
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
             if blv and brv:
                 break
@@ -106,6 +107,7 @@ def yard_drive(fr, fl, bl, br, reversing = False):
     else:
         flag = 0
         while True:
+            check_stop_reset()
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
             reverse_correction(rv, lv)
             if not brv and not blv and flag == 0:
@@ -130,22 +132,13 @@ def rotate(clockwise, sensor, differential, timeout_ms):
     start = time.ticks_ms()
     for target in (0, 1):               # 1st: leave the line, 2nd: find the next
         while sensor.value() != target:
+            check_stop_reset()
             spin(clockwise, differential)
             if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
                 stop()
                 return False            # gave up
     stop()
     return True
-
-def grab_sequence(fr, fl, bl, br):
-    grab_servo.grab()
-    height_servo.set_angle(60)
-    timeout_ms = 2000
-    start = time.ticks_ms()
-    while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
-        depot_drive(fr, fl, bl, br, reversing = True)
-    else:
-        stop()
 
 def rotate_time(clockwise, differential, timeout_ms):
     'Rotate for a fixed period of timeout ms, without a sensor-defined end state'
@@ -176,7 +169,7 @@ def depot_sequence(rightturn, fr, fl, bl, br):
     forwards_time(50)         #Drive until line ends
     stop()
     grab_servo.grab()
-    time.sleep_ms(2000)
+    wait_ms(2000)
                                            #Stop to pick up package
                                
     depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
@@ -191,7 +184,7 @@ def depot_sequence(rightturn, fr, fl, bl, br):
 #     yard_drive(fr, fl, bl, br)
 #     stop()                              #Stop to deposit package
 #     grab_servo.open()
-#     time.sleep_ms(2000)                               
+#     wait_ms(2000)                               
 #     yard_drive(fr, fl, bl, br, reversing = True)
 #     if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
 #         turn_90(not rightturn, fr, fl)        # Not rightturn means it is continuing in same direction as it came
@@ -209,7 +202,7 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     stop()
     forwards_time(150, reversing = True)                              #Stop to deposit package
     grab_servo.open()
-    time.sleep_ms(2000)                               
+    wait_ms(2000)                               
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
     ok = turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
@@ -219,10 +212,12 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
     depot_drive(fr, fl, bl, br)         #Drive until line ends
+    forwards_time(50)         #Drive forwards a little bit more
     stop()
     package_found = package_present()
     if package_found:
-        time.sleep_ms(3000)                                #Pick up the package
+        grab_servo.grab()
+        wait_ms(1000)                             #Pick up the package
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
         turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
                                       # Go deliver the package
@@ -239,14 +234,49 @@ def new_yard_sequence(rightturn, fr, fl, bl, br, change_dir):
     forwards_time(200)
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
-    stop()                              #Stop to deposit package
-    time.sleep_ms(3000)                               
+    stop()                             
+    forwards_time(150, reversing = True)  #Reverse to get the package into the yard
+    grab_servo.open()                     #Deposit package
+    wait_ms(1000)                            
     yard_drive(fr, fl, bl, br, reversing = True)
     if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
-        turn_90(rightturn if change_dir else not rightturn, fr, fl) 
+        leave_line(rightturn if change_dir else not rightturn, fr, fl)            # get off the yard line first
+        ok = turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False)       # then find the main line
     else:
-        rotate_time(not rightturn, True, 150)
-        turn_90(rightturn if change_dir else not rightturn, fr, fl) 
+        leave_line(rightturn if change_dir else not rightturn, fr, fl)                                   # get off the yard line first
+        ok = turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False) 
+
+def junction_function(fr, fl , bl, br, upwards = False):
+    flag = 0
+    while True:
+        check_stop_reset()
+        blv, brv = bl.value(), br.value()
+        normal_drive(fr, fl)                           
+        if upwards:
+            if flag == 0 and not brv and not blv:
+                flag = 1
+            elif flag == 1 and (brv or blv):
+                wait_ms(25)                         #Can edit this value based on testing
+                blv, brv = bl.value(), br.value()   #Re-read sensors after the sleep
+                if blv and brv:
+                    turn_90(determine_pole() == "north", fr, fl)
+                else:
+                    turn_90(brv == 1, fr, fl)
+                    #### Read IR sensors here
+                flag += 1                                 # now skip the four-point after the turn
+            elif flag == 2 and blv and brv:
+                flag += 1                                  # on the four-point
+            elif flag == 3 and not blv and not brv:
+                break      
+        else:
+            if not brv and not blv and flag == 0:
+                flag += 1
+            elif flag == 1 and brv and blv:
+                flag += 1
+            elif flag == 2 and not brv and not blv:
+                break
+    stop()
+
 
 
 def upper_depots(fr, fl, bl, br, rightdirection = True):
@@ -254,6 +284,7 @@ def upper_depots(fr, fl, bl, br, rightdirection = True):
     package = False
     on_four_point = False            # True while still sitting on a four point already counted
     while True:
+        check_stop_reset()
         blv, brv = bl.value(), br.value()
         new_four_point = bool(blv and brv)  #Triggers every time both of the rear sensors are 1
 

@@ -1,8 +1,9 @@
 from machine import Pin
-from movements import stop, normal_drive, turn_90, corner_turn, new_yard_sequence, new_depot_sequence, upper_depots
+from movements import stop, normal_drive, corner_turn, new_yard_sequence, new_depot_sequence, upper_depots, junction_function
 import time
-from initialization import button_pressed
+from initialization import button_pressed, check_stop_reset, Stop
 from hall_effect_sensor import determine_pole
+from Servo import grab_servo, height_servo
 
 sens1 = 8
 sens2 = 9 
@@ -29,12 +30,28 @@ def is_three_point(fr, fl, bl, br):
 
 def skip_three_point():
     while backl.value() or backr.value():
+        check_stop_reset()
         normal_drive(frontr, frontl)
+
+def location_update(location, fr, fl, bl, br, three_step, corner):
+    '''One driving step. Updates location if at a three_point or corner. Three step dictates whether
+    locations are incrementing or decrementing, and corner sets it at 1 or 0 after corner turn'''
+    check_stop_reset()
+    if is_three_point(fr, fl, bl, br):
+        skip_three_point()
+        return location + three_step
+    elif not fr and not fl:
+        if corner_turn(bl, br, frontr, frontl) is not None:
+            return corner
+    else:
+        normal_drive(frontr, frontl)
+    return location
 
 
 def delivery(location, in_pos, package_no, pole, YN, YS, correct_side = False):
     'Delivers the first and second packages, requires package = True and package_no to be 0 or 1'
     while True:
+        check_stop_reset()
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
         three_point = is_three_point(fr, fl, bl, br)
         ### in_pos means need to switch sides, and then find depot, counting upwards
@@ -53,38 +70,21 @@ def delivery(location, in_pos, package_no, pole, YN, YS, correct_side = False):
                 return location
                 #Package no += 1, package = False, and redefines in_pos after exiting
             else:
-                if three_point:
-                    skip_three_point()
-                    location += 1 if correct_side else - 1   #correct_side only True when junction has been passed
-                                    ##This happens when in_pos is false (needs to get to depot on other side, has passed jnc)
-                                    ##Or when it has come from the upper depots
-                elif not fr and not fl:
-                        turned_right = corner_turn(bl, br, frontr, frontl)
-                        if turned_right is not None:       # a turn actually happened    
-                            location = 1 if correct_side else 0 #the else should not be called since in_pos being true means it delivers before
-                                                                # the 90 degree turn
-                else:
-                    normal_drive(frontr, frontl)
+                location = location_update(location, fr, fl, bl, br, 1 if correct_side else -1,
+                                           1 if correct_side else 0)    ### The 0 here should not be used
         else:
         ### Needs to get past the junction, and then will be on the correct side
             if three_point and location == 0:         ### May need edit here
-                junction_function()
+                junction_function(frontr, frontl, backl, backr)
                 correct_side = True
             else:
-                if three_point:
-                    skip_three_point()
-                    location -= 1
-                elif not fr and not fl:
-                    turned_right = corner_turn(bl, br, frontr, frontl)
-                    if turned_right is not None:       # a turn actually happened    
-                        location = 0
-                else:
-                    normal_drive(frontr, frontl)
+                location = location_update(location, fr, fl, bl, br, -1, 0)
 
 def search_for_package(location, in_pos):
     'Searches for the first and second packages, requires package = False and package_no to be 0 or 1 to run'
     correct_side = in_pos
     while True:
+        check_stop_reset()
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
         three_point = is_three_point(fr, fl, bl, br)
         if correct_side:
@@ -93,66 +93,21 @@ def search_for_package(location, in_pos):
                 return 2
                 #package = True after exiting, location set to 2
             else:
-                if three_point:
-                    skip_three_point()
-                    location += 1
-                elif not fr and not fl:
-                    turned_right = corner_turn(bl, br, frontr, frontl)
-                    if turned_right is not None:       # a turn actually happened    
-                        location = 1
-                else:
-                    normal_drive(frontr, frontl)
+                location = location_update(location, fr, fl, bl, br, 1, 1)
         else:
             if three_point and location == 0:
-                junction_function()
+                junction_function(frontr, frontl, backl, backr)
                 correct_side = True
             else:
-                if three_point:
-                    skip_three_point()
-                    location -= 1
-                elif not fr and not fl:
-                    turned_right = corner_turn(bl, br, frontr, frontl)
-                    if turned_right is not None:       # a turn actually happened    
-                        location = 0
-                else:
-                    normal_drive(frontr, frontl)
-
-def junction_function(upwards = False):
-    flag = 0
-    while True:
-        blv, brv = backl.value(), backr.value()
-        normal_drive(frontr, frontl)                           
-        if upwards:
-            if flag == 0 and not brv and not blv:
-                flag = 1
-            elif flag == 1 and (brv or blv):
-                time.sleep_ms(25)                         #Can edit this value based on testing
-                blv, brv = backl.value(), backr.value()   #Re-read sensors after the sleep
-                if blv and brv:
-                    turn_90(determine_pole() == "north", frontr, frontl)
-                else:
-                    turn_90(brv == 1, frontr, frontl)
-                    #### Read IR sensors here
-                flag += 1                                 # now skip the four-point after the turn
-            elif flag == 2 and blv and brv:
-                flag += 1                                  # on the four-point
-            elif flag == 3 and not blv and not brv:
-                break      
-        else:
-            if not brv and not blv and flag == 0:
-                flag += 1
-            elif flag == 1 and brv and blv:
-                flag += 1
-            elif flag == 2 and not brv and not blv:
-                break
-    stop()
-
+                location = location_update(location, fr, fl, bl, br, -1, 0)
 
 def depot_bay_checker():
+    'Checks all the bays in the depot until package is found'
     bay_no = 0
-    while True:                                    # search outwards
+    while True:
+        check_stop_reset()                                    # search outwards
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
-        if (fr and fl and bl and not br) or (fr and fl and br and not bl):
+        if is_three_point(fr, fl, bl, br):
             found = new_depot_sequence(br == 1, frontr, frontl, backl, backr)
             skip_three_point()
             if found:
@@ -161,10 +116,11 @@ def depot_bay_checker():
         else:
             normal_drive(frontr, frontl)
 
-    while bay_no > 0:                              # return past the empty bays
+    while bay_no > 0:
+        check_stop_reset()
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
-        if (fr and fl and bl and not br) or (fr and fl and br and not bl):
-            skip_three_point()
+        if is_three_point(fr, fl, bl, br):
+            skip_three_point()     ###Skip the bays
             bay_no -= 1
         else:
             normal_drive(frontr, frontl)
@@ -175,17 +131,13 @@ def drive():
     try:
         while True:
 
-            if button_pressed():
-                print("Power is off")
-                break
+            check_stop_reset()
 
-
-            #Used to check and define the states (True/False)       
+            #Used to check and define the states (True/False) - Booleans, not pins 
             fr = frontr.value()
             fl = frontl.value()
             bl = backl.value()
             br = backr.value()
-
 
             ### Start sequence, exits with the first turn
             if start == True:
@@ -216,14 +168,14 @@ def drive():
                             #### Required to switch the side, if in_pos is now true it means it switched sides, and if
                             #### in_pos is false it means it is still on the same side
                     else:
-                        location = search_for_package(location, in_pos)
+                        location = search_for_package(location, in_pos) #in_pos only important for package_no = 1, True for 0
                         package = True
 
                ### The upper packages
                 elif package_no in (2, 3):
                     if package:
                         pole = determine_pole()
-                        junction_function(upwards = True)
+                        junction_function(frontr, frontl, backl, backr, upwards = True)
                         location = 0
                         location = delivery(location, True, package_no, pole, YN, YS, correct_side = True)
                         ## in_pos always True for turn, correct_side is true to ensure locations counted up
@@ -236,20 +188,12 @@ def drive():
                     else:
                         three_point = is_three_point(fr, fl, bl, br)
                         if three_point and location == 0:
-                            junction_function(upwards = True)
+                            junction_function(frontr, frontl, backl, backr, upwards = True)
                             upper_depots(frontr, frontl, backl, backr, True if package_no == 2 else False)  
                             #Should be generalised for sequential
                             package = True
                         else:
-                            if three_point:
-                                skip_three_point()
-                                location -= 1
-                            elif not fr and not fl:
-                                turned_right = corner_turn(bl, br, frontr, frontl)
-                                if turned_right is not None:       # a turn actually happened    
-                                    location = 0
-                            else:
-                                normal_drive(frontr, frontl)
+                            location = location_update(location, fr, fl, bl, br, -1, 0)
 
                 ##Exit sequence, drive to junction and stop
                 else:
@@ -258,19 +202,13 @@ def drive():
                         stop() 
                         break
                     else:
-                        if three_point:
-                            skip_three_point()
-                            location -= 1
-                        elif not fr and not fl:
-                            turned_right = corner_turn(bl, br, frontr, frontl)
-                            if turned_right is not None:       # a turn actually happened    
-                                location = 0
-                        else:
-                            normal_drive(frontr, frontl)
+                        location = location_update(location, fr, fl, bl, br, -1, 0)
 
-
+    except Stop:
+        print("Button stop; press button again to restart")
     finally:
         stop()
+        reset_state()
     
 def reset_state():
     global location, package, package_no, in_pos, start, YN, YS
@@ -280,15 +218,14 @@ def reset_state():
     in_pos = True
     start = True
     YN, YS = 0, 0
+    grab_servo.open()
 
-def main(reset = False):
+def main():
     while True:
         print("Waiting for button")
         while not button_pressed():
             time.sleep_ms(20)
         print("Power is on")
-        if reset:
-            reset_state()
         drive()               # returns when the button is pressed again
 
 if __name__ == "__main__":
