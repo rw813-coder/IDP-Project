@@ -203,11 +203,11 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     yard_drive(fr, fl, bl, br)
     stop()
     forwards_time(200, reversing = True)
-    height_servo.set_angle(215)
+    height_servo.lo()
     wait_ms(1000)                              #Stop to deposit package
     grab_servo.open()
     wait_ms(2000)
-    height_servo.set_angle(150)                               
+    height_servo.high()                              
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
     turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
@@ -241,12 +241,12 @@ def new_yard_sequence(rightturn, fr, fl, bl, br, change_dir):
     yard_drive(fr, fl, bl, br)
     stop()                             
     forwards_time(150, reversing = True)  #Reverse to get the package into the yard
-    height_servo.set_angle(215)
+    height_servo.lo()
     wait_ms(1000)
     grab_servo.open()                     #Deposit package
     light_turn_off()
     wait_ms(1000)
-    height_servo.set_angle(150)                            
+    height_servo.high()                           
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(rightturn if change_dir else not rightturn, fr, fl)            # get off the yard line first
     turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False)       # then find the main line
