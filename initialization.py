@@ -34,5 +34,5 @@ def wait_ms(ms):
     'Interruptible replacement for time.sleep_ms'
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < ms:
-        check_stop()
+        check_stop_reset()
         time.sleep_ms(5)

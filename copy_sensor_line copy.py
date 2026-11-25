@@ -4,6 +4,7 @@ import time
 from initialization import button_pressed, check_stop_reset, Stop
 from hall_effect_sensor import determine_pole
 from Servo import grab_servo, height_servo
+from led import light_turn_off
 
 sens1 = 8
 sens2 = 9 
@@ -219,6 +220,8 @@ def reset_state():
     start = True
     YN, YS = 0, 0
     grab_servo.open()
+    height_servo.set_angle(150)
+    light_turn_off()
 
 def main():
     while True:

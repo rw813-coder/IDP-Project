@@ -31,11 +31,13 @@ def light_turn_off(yellow_light_off = False):
     if yellow_light_off:
         led1.value(0)
     
-def magnetic_field_light():
-    if determine_pole == "north":
+def magnetic_field_light(pole = None):
+    if pole is None:
+        pole = determine_pole()
+    if pole == "north":
         led2.value(0)
         led3.value(1)
-    elif determine_pole == "south":
+    elif pole == "south":
         led2.value(1)
         led3.value(0)
     else:

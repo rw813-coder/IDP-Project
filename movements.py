@@ -3,6 +3,7 @@ from hall_effect_sensor import determine_pole, package_present
 import time
 from initialization import check_stop_reset, wait_ms
 from Servo import grab_servo, height_servo
+from led import magnetic_field_light, light_turn_off
 
 
 def forwards():
@@ -144,6 +145,7 @@ def rotate_time(clockwise, differential, timeout_ms):
     'Rotate for a fixed period of timeout ms, without a sensor-defined end state'
     start = time.ticks_ms()
     while time.ticks_diff(time.ticks_ms(), start) < timeout_ms:
+        check_stop_reset()
         spin(clockwise, differential)
     else:
         stop()
@@ -164,7 +166,7 @@ def corner_turn(bl, br, fr, fl):
 def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
-    rotate_time(rightturn, True, 85)
+    rotate_time(rightturn, True, 70)
     depot_drive(fr, fl, bl, br)
     forwards_time(50)         #Drive until line ends
     stop()
@@ -200,13 +202,15 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     rotate_time(rightturn, True, 185)
     yard_drive(fr, fl, bl, br)
     stop()
-    forwards_time(150, reversing = True)                              #Stop to deposit package
+    forwards_time(200, reversing = True)
+    height_servo.set_angle(215)
+    wait_ms(1000)                              #Stop to deposit package
     grab_servo.open()
-    wait_ms(2000)                               
+    wait_ms(2000)
+    height_servo.set_angle(150)                               
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
-    ok = turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
-    print("final turn ok:", ok)
+    turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
  
 def new_depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
@@ -217,6 +221,7 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
     package_found = package_present()
     if package_found:
         grab_servo.grab()
+        magnetic_field_light()
         wait_ms(1000)                             #Pick up the package
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
         turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
@@ -236,15 +241,15 @@ def new_yard_sequence(rightturn, fr, fl, bl, br, change_dir):
     yard_drive(fr, fl, bl, br)
     stop()                             
     forwards_time(150, reversing = True)  #Reverse to get the package into the yard
+    height_servo.set_angle(215)
+    wait_ms(1000)
     grab_servo.open()                     #Deposit package
-    wait_ms(1000)                            
+    light_turn_off()
+    wait_ms(1000)
+    height_servo.set_angle(150)                            
     yard_drive(fr, fl, bl, br, reversing = True)
-    if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
-        leave_line(rightturn if change_dir else not rightturn, fr, fl)            # get off the yard line first
-        ok = turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False)       # then find the main line
-    else:
-        leave_line(rightturn if change_dir else not rightturn, fr, fl)                                   # get off the yard line first
-        ok = turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False) 
+    leave_line(rightturn if change_dir else not rightturn, fr, fl)            # get off the yard line first
+    turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False)       # then find the main line
 
 def junction_function(fr, fl , bl, br, upwards = False):
     flag = 0

@@ -16,8 +16,8 @@ backl = Pin(sens3, Pin.IN)  ##Back left
 backr = Pin(sens4, Pin.IN)  ##Back right
 
 package = False
-location = 0
-last_location = 0
+location = 3
+last_location = 3
 
 def skip_three_point():
     while backl.value() or backr.value():
@@ -95,7 +95,7 @@ def drive():
 def reset_state():
     global location, package
     package = False
-    location = 0
+    location = 3
 
 def main(reset = False):
     while True:

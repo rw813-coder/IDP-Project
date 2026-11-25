@@ -1,5 +1,6 @@
 import machine
 import time
+from initialization import wait_ms
 
 adc = machine.ADC(machine.Pin(28)) # initialising ADC reading
 
@@ -31,7 +32,8 @@ def determine_pole():
 
 def package_present(samples=5, delay_ms=40):
     'Sample the hall sensor over 200 ms, to check for magnetic field at a depot'
-    if determine_pole() != "neither":
-        return True
-    time.sleep_ms(delay_ms)
+    for _ in range(samples):
+        if determine_pole() != "neither":
+            return True
+        wait_ms(delay_ms)
     return False
