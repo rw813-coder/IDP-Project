@@ -121,13 +121,20 @@ def yard_drive(fr, fl, bl, br, reversing = False):
 
 def spin(clockwise, differential):
     if clockwise:
-        left_motor.turn_speed()
-        if differential: right_motor.reverse()
-        else:        right_motor.off()
+        if differential:
+            left_motor.veer_speed() 
+            right_motor.reverse()
+        else:
+            left_motor.turn_speed()        
+            right_motor.off()
     else:
         right_motor.turn_speed()
-        if differential: left_motor.reverse()
-        else:        left_motor.off()
+        if differential: 
+            right_motor.veer_speed()
+            left_motor.reverse()
+        else:      
+            right_motor.turn_speed()  
+            left_motor.off()
 
 def rotate(clockwise, sensor, differential, timeout_ms):
     start = time.ticks_ms()
@@ -212,9 +219,12 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
     turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
  
-def new_depot_sequence(rightturn, fr, fl, bl, br):
+def new_depot_sequence(rightturn, fr, fl, bl, br, upper = False):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
+    rotate_time(rightturn, True, 90)
+    if upper:
+        height_servo.lo()
     depot_drive(fr, fl, bl, br)         #Drive until line ends
     forwards_time(50)         #Drive forwards a little bit more
     stop()
@@ -223,12 +233,14 @@ def new_depot_sequence(rightturn, fr, fl, bl, br):
         grab_servo.grab()
         magnetic_field_light()
         wait_ms(1000)                             #Pick up the package
+        if upper:
+            height_servo.high()
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
         turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
                                       # Go deliver the package
     else:                                                                                                                                    
         depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(not rightturn, fr, fl)               #Turn the same way as in entry to the depot
+        turn_90(not rightturn, fr, fl, differential = True)               #Turn the same way as in entry to the depot
                                                     #Needs changing to rightturn so that it always heads opposite to the way it came
                                                     #except in the case of package == 0        
     return package_found    
@@ -301,7 +313,7 @@ def upper_depots(fr, fl, bl, br, rightdirection = True):
 
             if not package:
                 if pos < 6:
-                    package = new_depot_sequence(rightdirection, fr, fl, bl, br)
+                    package = new_depot_sequence(rightdirection, fr, fl, bl, br, upper = True)
                     if not package:
                         pos += 1
                 #### Exit sequence here

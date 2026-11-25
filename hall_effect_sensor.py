@@ -37,3 +37,8 @@ def package_present(samples=5, delay_ms=40):
             return True
         wait_ms(delay_ms)
     return False
+
+# while True:
+#     x = determine_pole()
+#     print(x)
+#     time.sleep_ms(75)

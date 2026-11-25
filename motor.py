@@ -17,7 +17,7 @@ class Motor:
         self.pwm.duty_u16(int(65535 * speed / 100))  # speed range 0-100 motor
         self.speed = speed
 
-    def veer_speed(self, speed = 50):
+    def veer_speed(self, speed = 40):
         self.mDir.value(0)                     # slower speed in the direction of the veer
         self.pwm.duty_u16(int(65535 * speed / 100))  
         self.speed = speed

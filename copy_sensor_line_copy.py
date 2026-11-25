@@ -56,7 +56,7 @@ def delivery(location, in_pos, package_no, pole, YN, YS, correct_side = False):
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
         three_point = is_three_point(fr, fl, bl, br)
         ### in_pos means need to switch sides, and then find depot, counting upwards
-        if correct_side or in_pos:              
+        if correct_side or not in_pos:              
         ### If correct side, it has already passed the junction, location will become 1 once corner_turn is executed
         ## If in_pos, it doesn't need junction, but location counts down from 3 to 2 or 1.
             target = YN + 1 if pole == "north" else YS + 1
@@ -220,7 +220,7 @@ def reset_state():
     start = True
     YN, YS = 0, 0
     grab_servo.open()
-    height_servo.set_angle(150)
+    height_servo.high()
     light_turn_off()
 
 def main():
