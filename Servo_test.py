@@ -1,10 +1,10 @@
 from Servo import grab_servo, height_servo
 import time
 def closed_teeth():
-    grab_servo.set_angle(265)
+    grab_servo.set_angle(250)
 
 def open_teeth():
-    grab_servo.set_angle(190)
+    grab_servo.set_angle(205)
 
 def set_height():
     height_servo.set_angle(110)

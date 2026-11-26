@@ -90,7 +90,7 @@ def search_for_package(location, in_pos):
         three_point = is_three_point(fr, fl, bl, br)
         if correct_side:
             if three_point and location == 3:
-                depot_bay_checker()
+                depot_bay_checker(br == 1)
                 return 2
                 #package = True after exiting, location set to 2
             else:
@@ -102,26 +102,21 @@ def search_for_package(location, in_pos):
             else:
                 location = location_update(location, fr, fl, bl, br, -1, 0)
 
-def depot_bay_checker():
+def depot_bay_checker(rightturn):
     'Checks all the bays in the depot until package is found'
     bay_no = 0
     while True:
-        check_stop_reset()                                    # search outwards
-        fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
-        if is_three_point(fr, fl, bl, br):
-            found = new_depot_sequence(br == 1, frontr, frontl, backl, backr)
-            skip_three_point()
-            if found:
-                break
-            bay_no += 1
-        else:
-            normal_drive(frontr, frontl)
+        found = new_depot_sequence(rightturn, frontr, frontl, backl, backr, bay_no == 1)
+        if found or bay_no == 5:              # 6 bays: 0 to 5
+            break
+        bay_no += 1
+    skip_three_point() 
 
-    while bay_no > 0:
+    while bay_no > 0:                         # return past the empty bays
         check_stop_reset()
         fr, fl, bl, br = frontr.value(), frontl.value(), backl.value(), backr.value()
         if is_three_point(fr, fl, bl, br):
-            skip_three_point()     ###Skip the bays
+            skip_three_point()
             bay_no -= 1
         else:
             normal_drive(frontr, frontl)

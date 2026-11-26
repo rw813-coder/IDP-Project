@@ -121,24 +121,17 @@ def yard_drive(fr, fl, bl, br, reversing = False):
 
 def spin(clockwise, differential):
     if clockwise:
-        if differential:
-            left_motor.veer_speed() 
-            right_motor.reverse()
-        else:
-            left_motor.turn_speed()        
-            right_motor.off()
+        left_motor.turn_speed()
+        if differential: right_motor.reverse()
+        else:     right_motor.off()
     else:
         right_motor.turn_speed()
-        if differential: 
-            right_motor.veer_speed()
-            left_motor.reverse()
-        else:      
-            right_motor.turn_speed()  
-            left_motor.off()
+        if differential: left_motor.reverse()
+        else:       left_motor.off()
 
-def rotate(clockwise, sensor, differential, timeout_ms):
+def rotate(clockwise, sensor, differential, timeout_ms, targets = (0, 1)):
     start = time.ticks_ms()
-    for target in (0, 1):               # 1st: leave the line, 2nd: find the next
+    for target in targets:        # 1st: leave the line, 2nd: find the next
         while sensor.value() != target:
             check_stop_reset()
             spin(clockwise, differential)
@@ -156,6 +149,11 @@ def rotate_time(clockwise, differential, timeout_ms):
         spin(clockwise, differential)
     else:
         stop()
+
+def corrective_rotate(rightturn, fr, fl, timeout_ms = 5000, differential = False):
+    'Turn until the front sensor on the side being turned towards reads 0'
+    sensor = fr if rightturn else fl
+    return rotate(rightturn, sensor, differential, timeout_ms, targets=(0,))
 
 def turn_90(rightturn, fr, fl, timeout_ms = 5000, differential = False):
     '90 degree turn until front sensor not on the turning side goes to 1'
@@ -185,23 +183,6 @@ def depot_sequence(rightturn, fr, fl, bl, br):
     turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
 
 
-# def yard_sequence(rightturn, fr, fl, bl, br):
-#     'Turns into yard, deposits package, and turns back to return to the start point'
-#     turn_90(rightturn, fr, fl)
-#     forwards_time(200)
-#     rotate_time(rightturn, True, 185)
-#     yard_drive(fr, fl, bl, br)
-#     stop()                              #Stop to deposit package
-#     grab_servo.open()
-#     wait_ms(2000)                               
-#     yard_drive(fr, fl, bl, br, reversing = True)
-#     if (rightturn and fl.value() == 1) or (not rightturn and fr.value()):
-#         turn_90(not rightturn, fr, fl)        # Not rightturn means it is continuing in same direction as it came
-#                                               ### Can add diff and see
-#     else:
-#         rotate_time(not rightturn, True, 150)
-#         turn_90(not rightturn, fr, fl)       ### ditto
-
 def yard_sequence(rightturn, fr, fl, bl, br):
     'Turns into yard, deposits package, and turns back to return to the start point'
     turn_90(rightturn, fr, fl)
@@ -218,11 +199,12 @@ def yard_sequence(rightturn, fr, fl, bl, br):
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(not rightturn, fr, fl)                                   # get off the yard line first
     turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
- 
-def new_depot_sequence(rightturn, fr, fl, bl, br, upper = False):
+
+def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
     'Turns into depot, picks up package, and exits depot'
-    turn_90(rightturn, fr, fl)  #Turn into depot
-    rotate_time(rightturn, True, 90)
+    if entry:
+        turn_90(rightturn, fr, fl)  #Turn into depot
+        corrective_rotate(rightturn, fr, fl)
     if upper:
         height_servo.lo()
     depot_drive(fr, fl, bl, br)         #Drive until line ends
@@ -235,15 +217,13 @@ def new_depot_sequence(rightturn, fr, fl, bl, br, upper = False):
         wait_ms(1000)                             #Pick up the package
         if upper:
             height_servo.high()
-        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(rightturn, fr, fl)               #Turn the opposite way as in entry to the depot
-                                      # Go deliver the package
+        depot_drive(fr, fl, bl, br, reversing = True) #Reverse until the three-point junction
+        turn_90(rightturn, fr, fl)           #Turn the opposite way as in entry to the depot
     else:                                                                                                                                    
-        depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-        turn_90(not rightturn, fr, fl, differential = True)               #Turn the same way as in entry to the depot
-                                                    #Needs changing to rightturn so that it always heads opposite to the way it came
-                                                    #except in the case of package == 0        
+        depot_drive(fr, fl, bl, br, reversing = True)    #Reverse until the three-point junction 
+        turn_90(not rightturn, fr, fl)      #Turn the same way as in entry to the depot     
     return package_found    
+
 
 def new_yard_sequence(rightturn, fr, fl, bl, br, change_dir):
     'Turns into yard, deposits package, and continues in same direction if change_dir is true'
@@ -295,7 +275,7 @@ def junction_function(fr, fl , bl, br, upwards = False):
     stop()
 
 
-
+#### Needs editing completely
 def upper_depots(fr, fl, bl, br, rightdirection = True):
     pos = 0
     package = False
@@ -313,7 +293,7 @@ def upper_depots(fr, fl, bl, br, rightdirection = True):
 
             if not package:
                 if pos < 6:
-                    package = new_depot_sequence(rightdirection, fr, fl, bl, br, upper = True)
+                    package = new_depot_sequence(rightdirection, fr, fl, bl, br, entry = pos == 0, upper = True)
                     if not package:
                         pos += 1
                 #### Exit sequence here
@@ -323,6 +303,5 @@ def upper_depots(fr, fl, bl, br, rightdirection = True):
                     break
         normal_drive(fr, fl)       # reads the front sensors itself
                                    # Using normal_drive as it takes the pin objects (frontr etc) directly
-
     stop()
     return pos
