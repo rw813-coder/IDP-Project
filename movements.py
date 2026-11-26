@@ -48,10 +48,10 @@ def correction(fr, fl):
         forwards()
     elif fr == 0 and fl == 1:           
         veer(veerright = False)
-        wait_ms(5)         
+        wait_ms(40)         
     elif fr == 1 and fl == 0:          
         veer()
-        wait_ms(5)
+        wait_ms(40)
     else: 
         stop()
 
@@ -84,7 +84,7 @@ def depot_drive(fr, fl, bl, br, reversing = False, rightturn = True):
     'Driving along the line for the depot/yard sequences'
 
     if not reversing:
-        rotate_time(rightturn, False, 2000)
+
         while True:
             check_stop_reset()
             rv, lv = fr.value(), fl.value()  
@@ -209,8 +209,13 @@ def yard_sequence(rightturn, fr, fl, bl, br):
 def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
     'Turns into depot, picks up package, and exits depot'
     if entry:
-        turn_90(rightturn, fr, fl)  #Turn into depot
-        rotate_time(rightturn, True, 75)
+        turn_90(rightturn, fr, fl, 5000, differential = True)  #Turn into depot
+        forwards_time(600)
+        rotate_time(rightturn, False, 500)
+        forwards_time(350)
+        rotate_time(rightturn, False, 100)
+        # rotate_time(not rightturn, False, 100)
+        # forwards_time(600)
     if upper:
         height_servo.lo()
     depot_drive(fr, fl, bl, br)         #Drive until line ends
