@@ -106,7 +106,7 @@ def depot_bay_checker(rightturn):
     'Checks all the bays in the depot until package is found'
     bay_no = 0
     while True:
-        found = new_depot_sequence(rightturn, frontr, frontl, backl, backr, bay_no == 1)
+        found = new_depot_sequence(rightturn, frontr, frontl, backl, backr, bay_no == 0)
         if found or bay_no == 5:              # 6 bays: 0 to 5
             break
         bay_no += 1
@@ -147,7 +147,7 @@ def drive():
                     normal_drive(frontr, frontl)
 
             else:
-                if package_no < 2:       ### The first two packaged delivered, ends 
+                if package_no < 1:       ### The first two packaged delivered, ends 
                     if package:
                         pole = determine_pole()
                         in_pos = south and pole == "north" or not south and pole == "south"
@@ -168,28 +168,28 @@ def drive():
                         package = True
 
                ### The upper packages
-                elif package_no in (2, 3):
-                    if package:
-                        pole = determine_pole()
-                        junction_function(frontr, frontl, backl, backr, upwards = True)
-                        location = 0
-                        location = delivery(location, True, package_no, pole, YN, YS, correct_side = True)
-                        ## in_pos always True for turn, correct_side is true to ensure locations counted up
-                        package_no += 1
-                        package = False
-                        if pole == "south":
-                            YS += 1
-                        else:
-                            YN += 1
-                    else:
-                        three_point = is_three_point(fr, fl, bl, br)
-                        if three_point and location == 0:
-                            junction_function(frontr, frontl, backl, backr, upwards = True)
-                            upper_depots(frontr, frontl, backl, backr, True if package_no == 2 else False)  
-                            #Should be generalised for sequential
-                            package = True
-                        else:
-                            location = location_update(location, fr, fl, bl, br, -1, 0)
+                # elif package_no in (2, 3):
+                #     if package:
+                #         pole = determine_pole()
+                #         junction_function(frontr, frontl, backl, backr, upwards = True)
+                #         location = 0
+                #         location = delivery(location, True, package_no, pole, YN, YS, correct_side = True)
+                #         ## in_pos always True for turn, correct_side is true to ensure locations counted up
+                #         package_no += 1
+                #         package = False
+                #         if pole == "south":
+                #             YS += 1
+                #         else:
+                #             YN += 1
+                #     else:
+                #         three_point = is_three_point(fr, fl, bl, br)
+                #         if three_point and location == 0:
+                #             junction_function(frontr, frontl, backl, backr, upwards = True)
+                #             upper_depots(frontr, frontl, backl, backr, True if package_no == 2 else False)  
+                #             #Should be generalised for sequential
+                #             package = True
+                #         else:
+                #             location = location_update(location, fr, fl, bl, br, -1, 0)
 
                 ##Exit sequence, drive to junction and stop
                 else:

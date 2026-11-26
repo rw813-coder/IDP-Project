@@ -7,7 +7,7 @@ from led import magnetic_field_light, light_turn_off
 
 
 def forwards():
-    left_motor.normal_speed()
+    left_motor.left_speed()
     right_motor.normal_speed()
 
 def reverse():
@@ -28,7 +28,7 @@ def forwards_time(timeout_ms, reversing = False):
 
 def veer(veerright = True):
     if veerright:                      ### It HAS veered right, so need to reduce left motor speed
-        left_motor.normal_speed()
+        left_motor.left_speed()
         right_motor.veer_speed()
     else:                              ### Vice versa
         left_motor.veer_speed()
@@ -47,9 +47,11 @@ def correction(fr, fl):
     if fr == 1 and fl == 1:
         forwards()
     elif fr == 0 and fl == 1:           
-        veer(veerright = False)         
+        veer(veerright = False)
+        wait_ms(5)         
     elif fr == 1 and fl == 0:          
         veer()
+        wait_ms(5)
     else: 
         stop()
 
@@ -113,7 +115,9 @@ def yard_drive(fr, fl, bl, br, reversing = False):
             reverse_correction(rv, lv)
             if not brv and not blv and flag == 0:
                 flag += 1
-            elif (brv and blv) and flag == 1:
+            elif (brv or blv) and flag == 1:
+                flag += 1
+            elif (not brv and not blv) and flag == 2:
                 break
             else:
                 continue
@@ -171,7 +175,7 @@ def corner_turn(bl, br, fr, fl):
 def depot_sequence(rightturn, fr, fl, bl, br):
     'Turns into depot, picks up package, and exits depot'
     turn_90(rightturn, fr, fl)  #Turn into depot
-    rotate_time(rightturn, True, 70)
+    rotate_time(rightturn, True, 80)
     depot_drive(fr, fl, bl, br)
     forwards_time(50)         #Drive until line ends
     stop()
@@ -204,7 +208,7 @@ def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
     'Turns into depot, picks up package, and exits depot'
     if entry:
         turn_90(rightturn, fr, fl)  #Turn into depot
-        corrective_rotate(rightturn, fr, fl)
+        rotate_time(rightturn, True, 75)
     if upper:
         height_servo.lo()
     depot_drive(fr, fl, bl, br)         #Drive until line ends
@@ -218,7 +222,11 @@ def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
         if upper:
             height_servo.high()
         depot_drive(fr, fl, bl, br, reversing = True) #Reverse until the three-point junction
-        turn_90(rightturn, fr, fl)           #Turn the opposite way as in entry to the depot
+        if entry:
+            turn_90(rightturn, fr, fl)           #Turn the opposite way as in entry to the depot
+        else:
+            turn_90(rightturn, fr, fl)
+            turn_90(rightturn, fr, fl)
     else:                                                                                                                                    
         depot_drive(fr, fl, bl, br, reversing = True)    #Reverse until the three-point junction 
         turn_90(not rightturn, fr, fl)      #Turn the same way as in entry to the depot     
@@ -241,7 +249,7 @@ def new_yard_sequence(rightturn, fr, fl, bl, br, change_dir):
     height_servo.high()                           
     yard_drive(fr, fl, bl, br, reversing = True)
     leave_line(rightturn if change_dir else not rightturn, fr, fl)            # get off the yard line first
-    turn_90(rightturn if change_dir else not rightturn, fr, fl, differential = False)       # then find the main line
+    turn_90(rightturn if change_dir else not rightturn, fr, fl, timeout_ms = 5000, differential = False)       # then find the main line
 
 def junction_function(fr, fl , bl, br, upwards = False):
     flag = 0

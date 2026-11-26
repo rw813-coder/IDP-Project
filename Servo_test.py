@@ -4,7 +4,7 @@ def closed_teeth():
     grab_servo.set_angle(250)
 
 def open_teeth():
-    grab_servo.set_angle(205)
+    grab_servo.set_angle(215)
 
 def set_height():
     height_servo.set_angle(110)
