@@ -1,11 +1,8 @@
-from sensor_line import main
+from copy_sensor_line_copy import main
 import led
 
 try:
-    main(True)
+    main()
 finally:
     led._timer.deinit()
     led.light_turn_off(True)
-
-
-

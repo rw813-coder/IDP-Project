@@ -80,9 +80,11 @@ def leave_line(clockwise, fr, fl, timeout_ms = 3000):
     stop()
     return True
 
-def depot_drive(fr, fl, bl, br, reversing = False):
+def depot_drive(fr, fl, bl, br, reversing = False, rightturn = True):
     'Driving along the line for the depot/yard sequences'
+
     if not reversing:
+        rotate_time(rightturn, False, 2000)
         while True:
             check_stop_reset()
             rv, lv = fr.value(), fl.value()  
