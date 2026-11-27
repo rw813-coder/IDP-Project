@@ -4,6 +4,7 @@ import time
 from initialization import check_stop_reset, wait_ms
 from Servo import grab_servo, height_servo
 from led import magnetic_field_light, light_turn_off
+from ir_sensor import sensor_value
 
 
 def forwards():
@@ -42,16 +43,18 @@ def reverse_veer(veerright = True):
         left_motor.reverse()
         right_motor.reverse_veer_speed()
 
-def correction(fr, fl):
+def correction(fr, fl, timeout = False):
     'driving forwards with veering for correction'
     if fr == 1 and fl == 1:
         forwards()
     elif fr == 0 and fl == 1:           
         veer(veerright = False)
-        wait_ms(40)         
+        if timeout:
+            wait_ms(50)
     elif fr == 1 and fl == 0:          
         veer()
-        wait_ms(40)
+        if timeout:
+            wait_ms(50)
     else: 
         stop()
 
@@ -62,6 +65,14 @@ def reverse_correction(fr, fl):
         reverse_veer()
     else: 
         reverse()
+
+def crazy_correction(fr, fl, leftward = True):
+    if fr == leftward and fl == (not leftward):
+        forwards()
+    elif fr == 0 and fl == 0:
+        veer(veerright = not leftward)
+    else:
+        veer(veerright = leftward)
 
 def normal_drive(fr, fl):
     'using corrective driving (correction function) with constantly updating inputs'
@@ -80,7 +91,7 @@ def leave_line(clockwise, fr, fl, timeout_ms = 3000):
     stop()
     return True
 
-def depot_drive(fr, fl, bl, br, reversing = False, rightturn = True):
+def depot_drive(fr, fl, bl, br, reversing = False, veer_timeout = False):
     'Driving along the line for the depot/yard sequences'
 
     if not reversing:
@@ -90,12 +101,12 @@ def depot_drive(fr, fl, bl, br, reversing = False, rightturn = True):
             rv, lv = fr.value(), fl.value()  
             if not rv and not lv:
                 break
-            correction(rv, lv)
+            correction(rv, lv, veer_timeout)
     else:
         while True:
             check_stop_reset()
             rv, lv, blv, brv = fr.value(), fl.value(), bl.value(), br.value()
-            if brv and blv:
+            if brv or blv:
                 break
             reverse_correction(rv, lv)
     stop()
@@ -174,51 +185,20 @@ def corner_turn(bl, br, fr, fl):
         turn_90(rightturn, fr = fr, fl = fl)
         return rightturn
 
-def depot_sequence(rightturn, fr, fl, bl, br):
-    'Turns into depot, picks up package, and exits depot'
-    turn_90(rightturn, fr, fl)  #Turn into depot
-    rotate_time(rightturn, True, 80)
-    depot_drive(fr, fl, bl, br)
-    forwards_time(50)         #Drive until line ends
-    stop()
-    grab_servo.grab()
-    wait_ms(2000)
-                                           #Stop to pick up package
-                               
-    depot_drive(fr, fl, bl, br, reversing = True)          #Reverse until the three-point junction
-    turn_90(rightturn, fr, fl)               #Turn the same way as in entry to the depot
-
-
-def yard_sequence(rightturn, fr, fl, bl, br):
-    'Turns into yard, deposits package, and turns back to return to the start point'
-    turn_90(rightturn, fr, fl)
-    forwards_time(200)
-    rotate_time(rightturn, True, 185)
-    yard_drive(fr, fl, bl, br)
-    stop()
-    forwards_time(200, reversing = True)
-    height_servo.lo()
-    wait_ms(1000)                              #Stop to deposit package
-    grab_servo.open()
-    wait_ms(2000)
-    height_servo.high()                              
-    yard_drive(fr, fl, bl, br, reversing = True)
-    leave_line(not rightturn, fr, fl)                                   # get off the yard line first
-    turn_90(not rightturn, fr, fl, differential = False)            # then find the main line
-
 def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
     'Turns into depot, picks up package, and exits depot'
     if entry:
-        turn_90(rightturn, fr, fl, 5000, differential = True)  #Turn into depot
-        forwards_time(600)
-        rotate_time(rightturn, False, 500)
-        forwards_time(350)
-        rotate_time(rightturn, False, 100)
-        # rotate_time(not rightturn, False, 100)
-        # forwards_time(600)
+        turn_90(rightturn, fr, fl, 5000, differential = False if rightturn else True)  #Turn into depot
+        # if rightturn == False:
+            # forwards_time(600)
+            # rotate_time(rightturn, False, 500)
+            # forwards_time(350)
+            # rotate_time(rightturn, False, 100)
+            #### rotate_time(not rightturn, False, 100)
+            #### forwards_time(600)
     if upper:
         height_servo.lo()
-    depot_drive(fr, fl, bl, br)         #Drive until line ends
+    depot_drive(fr, fl, bl, br, reversing = False, veer_timeout = True if not rightturn else False)   #Drive until line ends
     forwards_time(50)         #Drive forwards a little bit more
     stop()
     package_found = package_present()
@@ -235,8 +215,10 @@ def new_depot_sequence(rightturn, fr, fl, bl, br, entry = False, upper = False):
             turn_90(rightturn, fr, fl)
             turn_90(rightturn, fr, fl)
     else:                                                                                                                                    
-        depot_drive(fr, fl, bl, br, reversing = True)    #Reverse until the three-point junction 
-        turn_90(not rightturn, fr, fl)      #Turn the same way as in entry to the depot     
+        depot_drive(fr, fl, bl, br, reversing = True)    #Reverse until the three-point junction
+        forwards_time(100)
+        leave_line(not rightturn, fr, fl)
+        turn_90(not rightturn, fr, fl) 
     return package_found    
 
 
@@ -274,6 +256,10 @@ def junction_function(fr, fl , bl, br, upwards = False):
                     turn_90(determine_pole() == "north", fr, fl)
                 else:
                     turn_90(brv == 1, fr, fl)
+                    stop()
+                    while sensor_value() != 1:      # wait here while the reading is 0
+                        check_stop_reset()          # the button can still stop and reset the run
+                        time.sleep_ms(10)
                     #### Read IR sensors here
                 flag += 1                                 # now skip the four-point after the turn
             elif flag == 2 and blv and brv:

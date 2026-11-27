@@ -1,4 +1,4 @@
-from copy_sensor_line_copy import main
+from sensor_line import main
 import led
 
 try:
